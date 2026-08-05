@@ -17,6 +17,44 @@ import {
 
 initAuth();
 
+function getInitialFromName(name = "User") {
+  const value = String(name || "User").trim();
+  if (!value) return "U";
+  return value.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part.charAt(0).toUpperCase()).join('') || 'U';
+}
+
+function syncHeaderProfile(profileOverride = null) {
+  const currentUser = getCurrentUser();
+  const fallbackName = currentUser?.name || profileOverride?.name || 'User';
+  const displayName = (profileOverride?.name && profileOverride.name !== 'User') ? profileOverride.name : fallbackName;
+  const cleanName = String(displayName || 'User').trim() || 'User';
+  const greeting = document.getElementById('greetingText');
+  const avatar = document.getElementById('headerAvatar');
+  const profileName = document.getElementById('profileName');
+  const profileEmail = document.getElementById('profileEmail');
+
+  if (greeting) {
+    const hour = new Date().getHours();
+    let label = 'Good morning';
+    if (hour >= 12 && hour < 17) label = 'Good afternoon';
+    if (hour >= 17) label = 'Good evening';
+    greeting.textContent = `${label}, ${cleanName}!`;
+  }
+
+  if (avatar) avatar.textContent = getInitialFromName(cleanName);
+  if (profileName && !profileName.value) profileName.value = cleanName;
+  if (profileEmail && !profileEmail.value && currentUser?.email) profileEmail.value = currentUser.email;
+}
+
+async function bootstrapHeaderProfile() {
+  const u = uid();
+  if (!u) return;
+  const profileData = await getProfile(u);
+  syncHeaderProfile(profileData);
+}
+
+window.syncHeaderProfile = syncHeaderProfile;
+
 function uid() {
   return getCurrentUser()?.uid || getUserId();
 }
@@ -74,6 +112,61 @@ function resetTransactionForm() {
   if (txNote) txNote.value = '';
 }
 
+window.resetTransactionForm = resetTransactionForm;
+window.resetBudgetForm = function() {
+  const category = document.getElementById('budgetCategory');
+  const limit = document.getElementById('budgetLimit');
+
+  if (category) category.value = 'Food';
+  if (limit) limit.value = '';
+};
+window.resetSavingsGoalForm = function() {
+  const name = document.getElementById('goalName');
+  const target = document.getElementById('goalTarget');
+  const saved = document.getElementById('goalSaved');
+  const desc = document.getElementById('goalDesc');
+
+  if (name) name.value = '';
+  if (target) target.value = '';
+  if (saved) saved.value = '';
+  if (desc) desc.value = '';
+};
+window.resetAddFundsForm = function() {
+  const amount = document.getElementById('addFundsAmount');
+  const note = document.getElementById('addFundsNote');
+
+  if (amount) amount.value = '';
+  if (note) note.value = '';
+};
+
+function resetBudgetForm() {
+  const category = document.getElementById('budgetCategory');
+  const limit = document.getElementById('budgetLimit');
+
+  if (category) category.value = 'Food';
+  if (limit) limit.value = '';
+}
+
+function resetSavingsGoalForm() {
+  const name = document.getElementById('goalName');
+  const target = document.getElementById('goalTarget');
+  const saved = document.getElementById('goalSaved');
+  const desc = document.getElementById('goalDesc');
+
+  if (name) name.value = '';
+  if (target) target.value = '';
+  if (saved) saved.value = '';
+  if (desc) desc.value = '';
+}
+
+function resetAddFundsForm() {
+  const amount = document.getElementById('addFundsAmount');
+  const note = document.getElementById('addFundsNote');
+
+  if (amount) amount.value = '';
+  if (note) note.value = '';
+}
+
 window.saveTransaction = async function() {
   const type = document.getElementById('txType')?.value || 'expense';
   const amount = parseFloat(document.getElementById('txAmount')?.value);
@@ -128,6 +221,7 @@ window.saveBudget = async function() {
 
   await setBudget(u, { category, limit });
   closeModal('budgetModal');
+  resetBudgetForm();
   showToast('<i class="fa-solid fa-bullseye"></i> Budget saved!');
   await refreshAfterAction();
 };
@@ -165,6 +259,7 @@ window.saveSavingsGoal = async function() {
 
   await addGoal(u, goalData);
   closeModal('savingsModal');
+  resetSavingsGoalForm();
   showToast('<i class="fa-solid fa-piggy-bank"></i> Goal created!');
   await refreshAfterAction();
 };
@@ -184,9 +279,10 @@ window.saveProfile = async function() {
   };
 
   await saveProfile(u, data);
+  syncHeaderProfile(data);
   showToast('<i class="fa-solid fa-check"></i> Profile saved!');
   const avatar = document.getElementById('profileAvatarBig');
-  if (avatar) avatar.textContent = data.name.charAt(0).toUpperCase();
+  if (avatar) avatar.textContent = getInitialFromName(data.name);
   await refreshAfterAction();
 };
 
@@ -198,3 +294,5 @@ window.toggleDarkMode = async function() {
   }
   showToast(isDark ? '<i class="fa-solid fa-moon"></i> Dark mode on' : '<i class="fa-solid fa-sun"></i> Light mode on');
 };
+
+bootstrapHeaderProfile();

@@ -103,6 +103,9 @@ window.saveTransaction = async function() {
   const { addTransaction } = await import("./firebase.js");
   await addTransaction(u, { type, amount, desc, category, date, note });
   closeModal('txModal');
+  if (typeof window.resetTransactionForm === 'function') {
+    window.resetTransactionForm();
+  }
   showToast('<i class="fa-solid fa-check-circle"></i> Transaction added!');
   transactions = await getTransactions(u);
   window.renderTransactions();

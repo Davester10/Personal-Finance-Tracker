@@ -43,12 +43,13 @@ async function init() {
 }
 
 function updateGreeting() {
+  const currentUser = getCurrentUser();
+  const displayName = (currentUser?.name && currentUser.name !== 'User') ? currentUser.name : (profile?.name || 'User');
+  const cleanName = String(displayName || 'User').trim() || 'User';
   const hour = new Date().getHours();
   let g = 'Good morning'; if(hour>=12 && hour<17) g='Good afternoon'; if(hour>=17) g='Good evening';
-  const currentUser = getCurrentUser();
-  const displayName = (profile?.name && profile.name !== 'User') ? profile.name : (currentUser?.name || 'User');
-  document.getElementById('greetingText').textContent = `${g}, ${displayName}!`;
-  document.getElementById('headerAvatar').textContent = (displayName || 'U').charAt(0).toUpperCase();
+  document.getElementById('greetingText').textContent = `${g}, ${cleanName}!`;
+  document.getElementById('headerAvatar').textContent = cleanName.split(/\s+/).filter(Boolean).slice(0,2).map(part => part.charAt(0).toUpperCase()).join('') || 'U';
 }
 
 function setupMonthYearFilter() {
@@ -182,6 +183,9 @@ window.saveTransaction = async function() {
   const { addTransaction } = await import("./firebase.js");
   await addTransaction(u, { type, amount, desc, category, date, note });
   closeModal('txModal');
+  if (typeof window.resetTransactionForm === 'function') {
+    window.resetTransactionForm();
+  }
   showToast(type==='income'?'<i class="fa-solid fa-money-bill-wave"></i> Income added!':'<i class="fa-solid fa-wallet"></i> Expense added!');
   transactions = await getTransactions(u);
   window.renderDashboard();

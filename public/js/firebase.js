@@ -40,6 +40,26 @@ function saveStoredCollection(uid, key, data) {
   localStorage.setItem(getStorageKey(uid, key), JSON.stringify(data));
 }
 
+async function saveActivity(uid, action, message, meta = {}) {
+  const activeUid = getActiveUid(uid);
+  const entry = {
+    action,
+    message,
+    meta,
+    createdAt: serverTimestamp()
+  };
+
+  try {
+    await addDoc(collection(db, "users", activeUid, "activity"), entry);
+  } catch {
+    const list = readStoredCollection(activeUid, "activity", []);
+    saveStoredCollection(activeUid, "activity", [
+      { ...entry, createdAt: new Date().toISOString() },
+      ...list
+    ].slice(0, 200));
+  }
+}
+
 function refreshInBackground(uid, key, loaderFn, fallback) {
   if (!hasStoredCollection(uid, key)) return;
   loaderFn().catch(() => {}).then(data => {
@@ -58,15 +78,25 @@ export async function getProfile(uid) {
 
   if (hasStoredCollection(activeUid, "profile")) {
     refreshInBackground(activeUid, "profile", async () => {
-      const snap = await getDoc(doc(db, "users", activeUid, "profile", "main"));
-      return snap.exists() ? snap.data() : cached;
+      const [profileSnap, userSnap] = await Promise.all([
+        getDoc(doc(db, "users", activeUid, "profile", "main")),
+        getDoc(doc(db, "users", activeUid))
+      ]);
+      const profileData = profileSnap.exists() ? profileSnap.data() : {};
+      const userData = userSnap.exists() ? userSnap.data() : {};
+      return { ...PROFILE_FALLBACK, ...userData, ...profileData };
     }, PROFILE_FALLBACK);
     return cached;
   }
 
   try {
-    const snap = await getDoc(doc(db, "users", activeUid, "profile", "main"));
-    const data = snap.exists() ? snap.data() : PROFILE_FALLBACK;
+    const [profileSnap, userSnap] = await Promise.all([
+      getDoc(doc(db, "users", activeUid, "profile", "main")),
+      getDoc(doc(db, "users", activeUid))
+    ]);
+    const profileData = profileSnap.exists() ? profileSnap.data() : {};
+    const userData = userSnap.exists() ? userSnap.data() : {};
+    const data = { ...PROFILE_FALLBACK, ...userData, ...profileData };
     saveStoredCollection(activeUid, "profile", data);
     return data;
   } catch {
@@ -76,9 +106,18 @@ export async function getProfile(uid) {
 export async function saveProfile(uid, data) {
   const activeUid = getActiveUid(uid);
   try {
+    await setDoc(doc(db, "users", activeUid), {
+      uid: activeUid,
+      name: data.name || "User",
+      email: data.email || "",
+      phone: data.phone || "",
+      currency: data.currency || "₦"
+    }, { merge: true });
     await setDoc(doc(db, "users", activeUid, "profile", "main"), data, { merge: true });
+    await saveActivity(activeUid, "profile_updated", `Profile updated for ${data.name || 'User'}`, { email: data.email || '' });
   } catch {
     saveStoredCollection(activeUid, "profile", data);
+    await saveActivity(activeUid, "profile_updated", `Profile updated for ${data.name || 'User'}`, { email: data.email || '' });
   }
 }
 
@@ -108,8 +147,10 @@ export async function saveSettings(uid, data) {
   const activeUid = getActiveUid(uid);
   try {
     await setDoc(doc(db, "users", activeUid, "settings", "main"), data, { merge: true });
+    await saveActivity(activeUid, "settings_updated", `Settings updated`, data);
   } catch {
     saveStoredCollection(activeUid, "settings", data);
+    await saveActivity(activeUid, "settings_updated", `Settings updated`, data);
   }
 }
 
@@ -140,14 +181,17 @@ export async function getTransactions(uid) {
 export async function addTransaction(uid, tx) {
   const activeUid = getActiveUid(uid);
   try {
-    return await addDoc(collection(db, "users", activeUid, "transactions"), {
+    const docRef = await addDoc(collection(db, "users", activeUid, "transactions"), {
       ...tx,
       createdAt: serverTimestamp()
     });
+    await saveActivity(activeUid, "transaction_added", `${tx.type === 'income' ? 'Income' : 'Expense'} added: ${tx.desc}`, { txId: docRef.id, amount: tx.amount, category: tx.category, date: tx.date });
+    return docRef;
   } catch {
     const list = readStoredCollection(activeUid, "transactions", []);
     const item = { id: createId(), ...tx, createdAt: new Date().toISOString() };
     saveStoredCollection(activeUid, "transactions", [item, ...list]);
+    await saveActivity(activeUid, "transaction_added", `${tx.type === 'income' ? 'Income' : 'Expense'} added: ${tx.desc}`, { txId: item.id, amount: tx.amount, category: tx.category, date: tx.date });
     return item;
   }
 }
@@ -155,18 +199,22 @@ export async function updateTransaction(uid, id, tx) {
   const activeUid = getActiveUid(uid);
   try {
     await updateDoc(doc(db, "users", activeUid, "transactions", id), tx);
+    await saveActivity(activeUid, "transaction_updated", `Transaction updated`, { txId: id, ...tx });
   } catch {
     const list = readStoredCollection(activeUid, "transactions", []);
     saveStoredCollection(activeUid, "transactions", list.map(item => item.id === id ? { ...item, ...tx } : item));
+    await saveActivity(activeUid, "transaction_updated", `Transaction updated`, { txId: id, ...tx });
   }
 }
 export async function deleteTransaction(uid, id) {
   const activeUid = getActiveUid(uid);
   try {
     await deleteDoc(doc(db, "users", activeUid, "transactions", id));
+    await saveActivity(activeUid, "transaction_deleted", `Transaction deleted`, { txId: id });
   } catch {
     const list = readStoredCollection(activeUid, "transactions", []);
     saveStoredCollection(activeUid, "transactions", list.filter(item => item.id !== id));
+    await saveActivity(activeUid, "transaction_deleted", `Transaction deleted`, { txId: id });
   }
 }
 
@@ -197,9 +245,12 @@ export async function setBudget(uid, data) {
   try {
     const existing = await getDocs(query(collection(db, "users", activeUid, "budgets"), where("category", "==", data.category)));
     if (existing.empty) {
-      return await addDoc(collection(db, "users", activeUid, "budgets"), data);
+      const docRef = await addDoc(collection(db, "users", activeUid, "budgets"), data);
+      await saveActivity(activeUid, "budget_created", `Budget created for ${data.category}`, { budgetId: docRef.id, ...data });
+      return docRef;
     } else {
       await updateDoc(doc(db, "users", activeUid, "budgets", existing.docs[0].id), { limit: data.limit });
+      await saveActivity(activeUid, "budget_updated", `Budget updated for ${data.category}`, { budgetId: existing.docs[0].id, ...data });
       return existing.docs[0].id;
     }
   } catch {
@@ -208,10 +259,12 @@ export async function setBudget(uid, data) {
     if (existing) {
       const updated = list.map(item => item.category === data.category ? { ...item, limit: data.limit } : item);
       saveStoredCollection(activeUid, "budgets", updated);
+      await saveActivity(activeUid, "budget_updated", `Budget updated for ${data.category}`, { budgetId: existing.id, ...data });
       return existing.id;
     }
     const item = { id: createId(), ...data };
     saveStoredCollection(activeUid, "budgets", [item, ...list]);
+    await saveActivity(activeUid, "budget_created", `Budget created for ${data.category}`, { budgetId: item.id, ...data });
     return item.id;
   }
 }
@@ -219,9 +272,11 @@ export async function deleteBudget(uid, id) {
   const activeUid = getActiveUid(uid);
   try {
     await deleteDoc(doc(db, "users", activeUid, "budgets", id));
+    await saveActivity(activeUid, "budget_deleted", `Budget deleted`, { budgetId: id });
   } catch {
     const list = readStoredCollection(activeUid, "budgets", []);
     saveStoredCollection(activeUid, "budgets", list.filter(item => item.id !== id));
+    await saveActivity(activeUid, "budget_deleted", `Budget deleted`, { budgetId: id });
   }
 }
 
@@ -250,11 +305,14 @@ export async function getGoals(uid) {
 export async function addGoal(uid, goal) {
   const activeUid = getActiveUid(uid);
   try {
-    return await addDoc(collection(db, "users", activeUid, "goals"), goal);
+    const docRef = await addDoc(collection(db, "users", activeUid, "goals"), goal);
+    await saveActivity(activeUid, "goal_created", `Goal created: ${goal.name}`, { goalId: docRef.id, ...goal });
+    return docRef;
   } catch {
     const list = readStoredCollection(activeUid, "goals", []);
     const item = { id: createId(), ...goal };
     saveStoredCollection(activeUid, "goals", [item, ...list]);
+    await saveActivity(activeUid, "goal_created", `Goal created: ${goal.name}`, { goalId: item.id, ...goal });
     return item;
   }
 }
@@ -262,18 +320,22 @@ export async function updateGoal(uid, id, data) {
   const activeUid = getActiveUid(uid);
   try {
     await updateDoc(doc(db, "users", activeUid, "goals", id), data);
+    await saveActivity(activeUid, "goal_updated", `Goal updated`, { goalId: id, ...data });
   } catch {
     const list = readStoredCollection(activeUid, "goals", []);
     saveStoredCollection(activeUid, "goals", list.map(item => item.id === id ? { ...item, ...data } : item));
+    await saveActivity(activeUid, "goal_updated", `Goal updated`, { goalId: id, ...data });
   }
 }
 export async function deleteGoal(uid, id) {
   const activeUid = getActiveUid(uid);
   try {
     await deleteDoc(doc(db, "users", activeUid, "goals", id));
+    await saveActivity(activeUid, "goal_deleted", `Goal deleted`, { goalId: id });
   } catch {
     const list = readStoredCollection(activeUid, "goals", []);
     saveStoredCollection(activeUid, "goals", list.filter(item => item.id !== id));
+    await saveActivity(activeUid, "goal_deleted", `Goal deleted`, { goalId: id });
   }
 }
 

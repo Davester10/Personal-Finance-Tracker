@@ -82,7 +82,7 @@
       </div>
     </nav>
     <div class="px-3 py-4 border-t border-slate-200">
-      <button id="logoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors">
+      <button id="logoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-sm">
         <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout
       </button>
     </div>
@@ -128,7 +128,7 @@
       <a href="settings.html#profile" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors ml-4">
         <i class="fa-solid fa-user w-5 text-center"></i> Profile
       </a>
-      <button id="drawerLogoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors mt-2">
+      <button id="drawerLogoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors mt-2 shadow-sm">
         <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout
       </button>
     </nav>
@@ -363,7 +363,16 @@
 
     // Modal helpers
     window.openModal = function(id) { const el=document.getElementById(id); el.classList.remove('hidden'); el.classList.add('flex'); };
-    window.closeModal = function(id) { const el=document.getElementById(id); el.classList.remove('flex'); el.classList.add('hidden'); };
+    window.closeModal = function(id) {
+      const el=document.getElementById(id);
+      if (el) {
+        el.classList.remove('flex');
+        el.classList.add('hidden');
+      }
+      if (id === 'txModal' && typeof window.resetTransactionForm === 'function') {
+        window.resetTransactionForm();
+      }
+    };
     window.closeConfirm = function() { document.getElementById('confirmModal').classList.remove('flex'); document.getElementById('confirmModal').classList.add('hidden'); };
     let confirmCallback = null;
     window.openConfirm = function(msg, title='Are you sure?', btnText='Yes, proceed', callback) {

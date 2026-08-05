@@ -128,6 +128,9 @@ window.saveFundsToGoal = async function() {
     category: 'Savings', date: todayDateString(), note: note || 'Savings goal transfer'
   });
   closeModal('addFundsModal');
+  if (typeof window.resetAddFundsForm === 'function') {
+    window.resetAddFundsForm();
+  }
   showToast('<i class="fa-solid fa-circle-check"></i> Funds added!');
   goals = await getGoals(u);
   transactions = await getTransactions(u);
@@ -163,6 +166,9 @@ window.saveSavingsGoal = async function() {
   }
   await addGoal(u, goalData);
   closeModal('savingsModal');
+  if (typeof window.resetSavingsGoalForm === 'function') {
+    window.resetSavingsGoalForm();
+  }
   showToast('<i class="fa-solid fa-piggy-bank"></i> Goal created!');
   goals = await getGoals(u);
   transactions = await getTransactions(u);

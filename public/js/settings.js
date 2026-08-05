@@ -71,7 +71,8 @@ async function init() {
   document.getElementById('profileEmail').value = profileEmail;
   document.getElementById('profilePhone').value = profile.phone || '';
   document.getElementById('profileCurrency').value = profile.currency || '₦';
-  document.getElementById('profileAvatarBig').textContent = (profileName || 'U').charAt(0).toUpperCase();
+  document.getElementById('profileAvatarBig').textContent = profileName.split(/\s+/).filter(Boolean).slice(0,2).map(part => part.charAt(0).toUpperCase()).join('') || 'U';
+  document.getElementById('headerAvatar').textContent = profileName.split(/\s+/).filter(Boolean).slice(0,2).map(part => part.charAt(0).toUpperCase()).join('') || 'U';
 
   const storedTheme = getStoredTheme();
   if (storedTheme !== null) {
@@ -97,7 +98,7 @@ window.saveProfile = async function() {
   syncSessionProfile(data.name, data.email);
   showToast('<i class="fa-solid fa-check"></i> Profile saved!');
 
-  document.getElementById('profileAvatarBig').textContent = data.name.charAt(0).toUpperCase();
+  document.getElementById('profileAvatarBig').textContent = data.name.split(/\s+/).filter(Boolean).slice(0,2).map(part => part.charAt(0).toUpperCase()).join('') || 'U';
   const greeting = document.getElementById('greetingText');
   const headerAvatar = document.getElementById('headerAvatar');
 
@@ -110,7 +111,7 @@ window.saveProfile = async function() {
   }
 
   if (headerAvatar) {
-    headerAvatar.textContent = (data.name || 'U').charAt(0).toUpperCase();
+    headerAvatar.textContent = data.name.split(/\s+/).filter(Boolean).slice(0,2).map(part => part.charAt(0).toUpperCase()).join('') || 'U';
   }
 };
 

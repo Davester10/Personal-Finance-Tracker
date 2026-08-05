@@ -88,6 +88,9 @@ window.saveBudget = async function() {
   const u = uid(); if(!u) return;
   await setBudget(u, { category, limit });
   closeModal('budgetModal');
+  if (typeof window.resetBudgetForm === 'function') {
+    window.resetBudgetForm();
+  }
   showToast('<i class="fa-solid fa-bullseye"></i> Budget saved!');
   budgets = await getBudgets(u);
   window.renderBudget();
