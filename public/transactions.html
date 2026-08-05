@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en" class="antialiased">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Transactions - MyFinance</title>
+  <meta name="theme-color" content="#7c3aed" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: { 50:'#f5f3ff',100:'#ede9fe',200:'#ddd6fe',300:'#c4b5fd',400:'#a78bfa',500:'#8b5cf6',600:'#7c3aed',700:'#6d28d9',800:'#5b21b6',900:'#4c1d95' },
+            income: { 50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857' },
+            expense: { 50:'#fff1f2',100:'#ffe4e6',200:'#fecdd3',300:'#fda4af',400:'#fb7185',500:'#f43f5e',600:'#e11d48',700:'#be123c' },
+            surface: '#ffffff',
+            bg: '#f8fafc',
+            muted: '#64748b',
+          },
+          fontFamily: { sans: ['Inter','system-ui','sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="css/style.css" />
+  
+</head>
+<body class="bg-bg text-slate-800 font-sans min-h-screen flex">
+
+  <!-- Sidebar (Desktop) -->
+  <aside id="sidebar" class="hidden lg:flex flex-col w-64 h-screen fixed top-0 left-0 bg-surface border-r border-slate-200 z-50 transition-transform">
+    <div class="flex items-center gap-3 px-6 py-5 border-b border-slate-200">
+      <div class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center text-xl font-bold">₦</div>
+      <div>
+        <div class="font-bold text-slate-900 leading-tight">MyFinance</div>
+        <div class="text-xs text-muted">Track. Plan. Grow.</div>
+      </div>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto" id="sideNav">
+      <a href="dashboard.html" data-page="dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-house w-5 text-center"></i> Dashboard
+      </a>
+      <div class="nav-group" data-group="transactions">
+        <a href="transactions.html" data-page="transactions" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+          <i class="fa-solid fa-clipboard-list w-5 text-center"></i> Transactions
+        </a>
+        <div class="nav-subnav ml-4 pl-4 border-l border-primary-200 space-y-1 pt-1">
+          <a href="income.html" data-page="income" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+            <i class="fa-solid fa-briefcase w-5 text-center"></i> Income
+          </a>
+          <a href="expenses.html" data-page="expenses" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+            <i class="fa-solid fa-chart-line w-5 text-center"></i> Expenses
+          </a>
+        </div>
+      </div>
+      <a href="budget.html" data-page="budget" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-bullseye w-5 text-center"></i> Budget Plan
+      </a>
+      <a href="savings.html" data-page="savings" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-piggy-bank w-5 text-center"></i> Savings Goals
+      </a>
+      <a href="reports.html" data-page="reports" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-chart-simple w-5 text-center"></i> Reports
+      </a>
+      <div class="nav-group" data-group="settings">
+        <a href="settings.html" data-page="settings" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+          <i class="fa-solid fa-cog w-5 text-center"></i> Settings
+        </a>
+        <div class="nav-subnav ml-4 pl-4 border-l border-primary-200 space-y-1 pt-1">
+          <a href="settings.html#profile" data-page="profile" class="nav-item flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+            <i class="fa-solid fa-user w-5 text-center"></i> Profile
+          </a>
+        </div>
+      </div>
+    </nav>
+    <div class="px-3 py-4 border-t border-slate-200">
+      <button id="logoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors">
+        <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- Mobile Drawer -->
+  <div id="drawerBackdrop" class="fixed inset-0 bg-slate-900/50 z-[60] hidden opacity-0 transition-opacity"></div>
+  <aside id="navDrawer" class="fixed top-0 left-0 w-[280px] h-screen bg-surface z-[70] -translate-x-full transition-transform shadow-2xl flex flex-col">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+      <div>
+        <div class="font-bold text-slate-900">MyFinance</div>
+        <div class="text-xs text-muted">Track. Plan. Grow.</div>
+      </div>
+      <button id="drawerClose" class="w-9 h-9 rounded-lg bg-slate-100 hover:bg-primary-50 flex items-center justify-center text-slate-600 transition-colors">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-house w-5 text-center"></i> Dashboard
+      </a>
+      <a href="transactions.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-clipboard-list w-5 text-center"></i> Transactions
+      </a>
+      <a href="income.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors ml-4">
+        <i class="fa-solid fa-briefcase w-5 text-center"></i> Income
+      </a>
+      <a href="expenses.html" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors ml-4">
+        <i class="fa-solid fa-chart-line w-5 text-center"></i> Expenses
+      </a>
+      <a href="budget.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-bullseye w-5 text-center"></i> Budget Plan
+      </a>
+      <a href="savings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-piggy-bank w-5 text-center"></i> Savings Goals
+      </a>
+      <a href="reports.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-chart-simple w-5 text-center"></i> Reports
+      </a>
+      <a href="settings.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors">
+        <i class="fa-solid fa-cog w-5 text-center"></i> Settings
+      </a>
+      <a href="settings.html#profile" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors ml-4">
+        <i class="fa-solid fa-user w-5 text-center"></i> Profile
+      </a>
+      <button id="drawerLogoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors mt-2">
+        <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout
+      </button>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="lg:ml-64 flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8 max-w-full">
+    <!-- Top Header -->
+    <header class="flex flex-wrap items-start justify-between gap-4 mb-8">
+      <div class="flex items-center gap-3">
+        <button id="menuToggle" class="lg:hidden w-10 h-10 rounded-xl bg-white border border-slate-200 flex flex-col justify-center items-center gap-1.5 hover:bg-primary-50 transition-colors shadow-sm">
+          <span class="block w-4 h-0.5 bg-slate-700 rounded-full"></span>
+          <span class="block w-4 h-0.5 bg-slate-700 rounded-full"></span>
+          <span class="block w-4 h-0.5 bg-slate-700 rounded-full"></span>
+        </button>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900" id="greetingText">Good morning, User!</h1>
+          <p class="text-sm text-muted mt-0.5">Here's your financial summary</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+          <i class="fa-solid fa-calendar text-slate-400 text-sm"></i>
+          <select id="monthFilter" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer"></select>
+          <select id="yearFilter" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer"></select>
+        </div>
+        <div id="headerAvatar" class="w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm">U</div>
+      </div>
+    </header>
+
+    
+<div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+  <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-primary-600"></i> All Transactions</h2>
+  <button onclick="openModal('txModal')" class="px-4 py-2.5 rounded-xl bg-primary-600 text-white font-semibold text-sm hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20">+ Add Transaction</button>
+</div>
+<div class="flex flex-wrap gap-3 mb-5">
+  <input type="text" id="txSearch" oninput="renderTransactions()" placeholder="Search..." class="flex-1 min-w-[160px] rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all shadow-sm" />
+  <select id="txTypeFilter" onchange="renderTransactions()" class="rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all shadow-sm cursor-pointer">
+    <option value="">All Types</option><option value="income">Income</option><option value="expense">Expense</option>
+  </select>
+  <select id="txCatFilter" onchange="renderTransactions()" class="rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all shadow-sm cursor-pointer">
+    <option value="">All Categories</option>
+  </select>
+</div>
+<div id="allTransactionsList" class="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100"></div>
+
+  </main>
+
+  <!-- Bottom Nav (Mobile) -->
+  <nav class="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/90 backdrop-blur border-t border-slate-200 z-50 flex items-center justify-around px-2">
+    <a href="dashboard.html" class="bottom-nav-item flex flex-col items-center gap-0.5 p-2 text-slate-500 hover:text-primary-600 transition-colors" data-page="dashboard">
+      <i class="fa-solid fa-house text-lg"></i><span class="text-[10px] font-medium">Home</span>
+    </a>
+    <a href="transactions.html" class="bottom-nav-item flex flex-col items-center gap-0.5 p-2 text-slate-500 hover:text-primary-600 transition-colors" data-page="transactions">
+      <i class="fa-solid fa-clipboard-list text-lg"></i><span class="text-[10px] font-medium">Txns</span>
+    </a>
+    <button id="fabBtn" class="flex flex-col items-center justify-center -mt-6 w-14 h-14 rounded-full bg-primary-600 text-white shadow-lg shadow-primary-500/30 hover:scale-105 transition-transform">
+      <i class="fa-solid fa-plus text-xl"></i>
+    </button>
+    <a href="reports.html" class="bottom-nav-item flex flex-col items-center gap-0.5 p-2 text-slate-500 hover:text-primary-600 transition-colors" data-page="reports">
+      <i class="fa-solid fa-chart-simple text-lg"></i><span class="text-[10px] font-medium">Reports</span>
+    </a>
+    <a href="settings.html" class="bottom-nav-item flex flex-col items-center gap-0.5 p-2 text-slate-500 hover:text-primary-600 transition-colors" data-page="settings">
+      <i class="fa-solid fa-cog text-lg"></i><span class="text-[10px] font-medium">Settings</span>
+    </a>
+  </nav>
+
+  <!-- Toast -->
+  <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 translate-y-4 opacity-0 pointer-events-none bg-slate-900 text-white px-5 py-3 rounded-full text-sm font-medium shadow-xl transition-all duration-300 z-[9999]"></div>
+
+  <!-- Transaction Modal -->
+  <div id="txModal" class="fixed inset-0 z-[100] hidden items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden animate-[slideUp_0.25s_ease]">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900">Add Transaction</h3>
+        <button onclick="closeModal('txModal')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+        <label class="block text-sm font-medium text-slate-700">Type
+          <select id="txType" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all">
+            <option value="income">Income</option><option value="expense">Expense</option>
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Amount (₦)
+          <input type="number" id="txAmount" min="1" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. 5000" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Description
+          <input type="text" id="txDesc" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. Market shopping" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Category
+          <select id="txCategory" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all">
+            <option>Food</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Education</option><option>Health</option><option>Entertainment</option><option>Salary</option><option>Business</option><option>Investment</option><option>Gift</option><option>Others</option>
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Date
+          <input type="date" id="txDate" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Note (optional)
+          <input type="text" id="txNote" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="Extra details..." />
+        </label>
+      </div>
+      <div class="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+        <button onclick="closeModal('txModal')" class="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-100 transition-colors">Cancel</button>
+        <button onclick="saveTransaction()" class="flex-1 px-4 py-2.5 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="confirmModal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-[slideUp_0.25s_ease]">
+      <div class="px-6 py-4 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900" id="confirmTitle">Are you sure?</h3>
+      </div>
+      <div class="px-6 py-5">
+        <p class="text-sm text-slate-600" id="confirmMessage">This action cannot be undone.</p>
+      </div>
+      <div class="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+        <button onclick="closeConfirm()" class="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-100 transition-colors">Cancel</button>
+        <button id="confirmAcceptBtn" class="flex-1 px-4 py-2.5 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition-colors shadow-lg shadow-red-500/20">Yes, proceed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Budget Modal -->
+  <div id="budgetModal" class="fixed inset-0 z-[100] hidden items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden animate-[slideUp_0.25s_ease]">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900">Set Budget Limit</h3>
+        <button onclick="closeModal('budgetModal')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <label class="block text-sm font-medium text-slate-700">Category
+          <select id="budgetCategory" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all">
+            <option>Food</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Education</option><option>Health</option><option>Entertainment</option><option>Others</option>
+          </select>
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Monthly Limit (₦)
+          <input type="number" id="budgetLimit" min="10" step="10" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. 20000" />
+        </label>
+      </div>
+      <div class="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+        <button onclick="closeModal('budgetModal')" class="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-100 transition-colors">Cancel</button>
+        <button onclick="saveBudget()" class="flex-1 px-4 py-2.5 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20">Save Budget</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Savings Goal Modal -->
+  <div id="savingsModal" class="fixed inset-0 z-[100] hidden items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden animate-[slideUp_0.25s_ease]">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900">New Savings Goal</h3>
+        <button onclick="closeModal('savingsModal')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
+        <label class="block text-sm font-medium text-slate-700">Goal Name
+          <input type="text" id="goalName" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. Emergency Fund" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Target Amount (₦)
+          <input type="number" id="goalTarget" min="1" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. 100000" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Amount Saved So Far (₦)
+          <input type="number" id="goalSaved" min="0" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. 40000" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Description
+          <input type="text" id="goalDesc" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. Save for important needs" />
+        </label>
+      </div>
+      <div class="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+        <button onclick="closeModal('savingsModal')" class="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-100 transition-colors">Cancel</button>
+        <button onclick="saveSavingsGoal()" class="flex-1 px-4 py-2.5 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20">Save Goal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Funds Modal -->
+  <div id="addFundsModal" class="fixed inset-0 z-[100] hidden items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4">
+    <div class="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden animate-[slideUp_0.25s_ease]">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <h3 class="font-bold text-slate-900">Add Funds to Goal</h3>
+        <button onclick="closeModal('addFundsModal')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-500 flex items-center justify-center transition-colors"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="px-6 py-5 space-y-4">
+        <label class="block text-sm font-medium text-slate-700">Amount (₦)
+          <input type="number" id="addFundsAmount" min="1" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. 5000" />
+        </label>
+        <label class="block text-sm font-medium text-slate-700">Note (optional)
+          <input type="text" id="addFundsNote" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. Transfer from wallet" />
+        </label>
+      </div>
+      <div class="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50">
+        <button onclick="closeModal('addFundsModal')" class="flex-1 px-4 py-2.5 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-100 transition-colors">Cancel</button>
+        <button onclick="saveFundsToGoal()" class="flex-1 px-4 py-2.5 rounded-lg bg-primary-600 text-white font-medium hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20">Add Funds</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { logoutUser } from "./js/auth.js";
+    // Drawer logic
+    const menuToggle = document.getElementById('menuToggle');
+    const drawer = document.getElementById('navDrawer');
+    const backdrop = document.getElementById('drawerBackdrop');
+    const closeBtn = document.getElementById('drawerClose');
+    function openDrawer() { drawer.classList.remove('-translate-x-full'); backdrop.classList.remove('hidden'); setTimeout(()=>backdrop.classList.remove('opacity-0'),10); document.body.classList.add('overflow-hidden'); }
+    function closeDrawer() { drawer.classList.add('-translate-x-full'); backdrop.classList.add('opacity-0'); setTimeout(()=>backdrop.classList.add('hidden'),300); document.body.classList.remove('overflow-hidden'); }
+    if(menuToggle) menuToggle.addEventListener('click', openDrawer);
+    if(closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    if(backdrop) backdrop.addEventListener('click', closeDrawer);
+    drawer?.querySelectorAll('a').forEach(a=>a.addEventListener('click', closeDrawer));
+
+    // Logout
+    document.getElementById('logoutBtn')?.addEventListener('click', logoutUser);
+    document.getElementById('drawerLogoutBtn')?.addEventListener('click', logoutUser);
+
+    // Active nav highlighting
+    const currentPage = location.pathname.split('/').pop().replace('.html','') || 'dashboard';
+    document.querySelectorAll('.nav-item').forEach(el => {
+      const page = el.getAttribute('data-page');
+      if(page === currentPage) { el.classList.add('bg-primary-600','text-white'); el.classList.remove('text-slate-600','hover:bg-primary-50','hover:text-primary-700'); }
+      else { el.classList.remove('bg-primary-600','text-white'); el.classList.add('text-slate-600','hover:bg-primary-50','hover:text-primary-700'); }
+    });
+    document.querySelectorAll('.bottom-nav-item').forEach(el => {
+      const page = el.getAttribute('data-page');
+      if(page === currentPage) el.classList.add('text-primary-600');
+      else el.classList.remove('text-primary-600');
+    });
+
+    // FAB
+    document.getElementById('fabBtn')?.addEventListener('click', () => openModal('txModal'));
+
+    // Modal helpers
+    window.openModal = function(id) { const el=document.getElementById(id); el.classList.remove('hidden'); el.classList.add('flex'); };
+    window.closeModal = function(id) { const el=document.getElementById(id); el.classList.remove('flex'); el.classList.add('hidden'); };
+    window.closeConfirm = function() { document.getElementById('confirmModal').classList.remove('flex'); document.getElementById('confirmModal').classList.add('hidden'); };
+    let confirmCallback = null;
+    window.openConfirm = function(msg, title='Are you sure?', btnText='Yes, proceed', callback) {
+      document.getElementById('confirmMessage').textContent = msg;
+      document.getElementById('confirmTitle').textContent = title;
+      document.getElementById('confirmAcceptBtn').textContent = btnText;
+      confirmCallback = callback;
+      const el = document.getElementById('confirmModal'); el.classList.remove('hidden'); el.classList.add('flex');
+    };
+    document.getElementById('confirmAcceptBtn')?.addEventListener('click', () => { if(confirmCallback) confirmCallback(); closeConfirm(); });
+  </script>
+
+  <script type="module" src="js/app-helpers.js"></script>
+  <script type="module" src="js/transactions.js"></script>
+  
+</body>
+</html>

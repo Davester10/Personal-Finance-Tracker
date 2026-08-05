@@ -1,0 +1,2 @@
+/* reports.css - Reports page specific */
+#monthlyBarChart, #reportDonutChart { max-height: 260px; }
