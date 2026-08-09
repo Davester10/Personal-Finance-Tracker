@@ -12,6 +12,8 @@ import {
   browserLocalPersistence,
   browserSessionPersistence
 } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { db } from "../firebase-config.js";
+import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
 import { saveProfile } from "./firebase.js";
 
 const provider = new GoogleAuthProvider();
@@ -66,6 +68,13 @@ export async function registerUser(name, email, password) {
   await setPersistence(auth, browserLocalPersistence);
   const cred = await createUserWithEmailAndPassword(auth, email, password);
   await updateProfile(cred.user, { displayName: name });
+  await setDoc(doc(db, "users", cred.user.uid), {
+    uid: cred.user.uid,
+    name,
+    email,
+    createdAt: serverTimestamp(),
+    provider: "email"
+  }, { merge: true });
   await saveProfile(cred.user.uid, { name, email, phone: "", currency: "₦" });
 
   const session = { uid: cred.user.uid, name, email };
@@ -88,6 +97,13 @@ export async function googleSignIn() {
   const cred = await signInWithPopup(auth, provider);
   const session = { uid: cred.user.uid, name: cred.user.displayName || "User", email: cred.user.email };
   sessionStorage.setItem("mf_user", JSON.stringify(session));
+  await setDoc(doc(db, "users", cred.user.uid), {
+    uid: cred.user.uid,
+    name: cred.user.displayName || "User",
+    email: cred.user.email,
+    createdAt: serverTimestamp(),
+    provider: "google"
+  }, { merge: true });
   await saveProfile(cred.user.uid, {
     name: cred.user.displayName || "User",
     email: cred.user.email,

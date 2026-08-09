@@ -183,6 +183,7 @@ export async function addTransaction(uid, tx) {
   try {
     const docRef = await addDoc(collection(db, "users", activeUid, "transactions"), {
       ...tx,
+      userId: activeUid,
       createdAt: serverTimestamp()
     });
     await saveActivity(activeUid, "transaction_added", `${tx.type === 'income' ? 'Income' : 'Expense'} added: ${tx.desc}`, { txId: docRef.id, amount: tx.amount, category: tx.category, date: tx.date });
