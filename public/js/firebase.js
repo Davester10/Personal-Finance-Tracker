@@ -10,6 +10,33 @@ const DEMO_UID = "demo-user";
 const PROFILE_FALLBACK = { name: "User", email: "", phone: "", currency: "₦" };
 const SETTINGS_FALLBACK = { darkMode: false };
 
+// In-memory cache avoids repeatedly parsing localStorage during the same page session.
+const memoryCache = new Map();
+const backgroundRefreshes = new Set();
+
+export async function logUserActivity({ userId, action, details = {}, metadata = {} }) {
+  const safeUserId = String(userId || "anonymous");
+  const payload = {
+    userId: safeUserId,
+    action: String(action || "UNKNOWN_ACTION"),
+    details: typeof details === "string" ? details : details ?? {},
+    metadata: metadata ?? {},
+    timestamp: serverTimestamp()
+  };
+
+  try {
+    await addDoc(collection(db, "activity_logs"), payload);
+  } catch (error) {
+    console.warn("Failed to log activity:", error);
+    try {
+      const key = `${STORAGE_PREFIX}:activity_logs:${safeUserId}`;
+      const saved = JSON.parse(localStorage.getItem(key) || "[]");
+      saved.unshift({ ...payload, timestamp: new Date().toISOString() });
+      localStorage.setItem(key, JSON.stringify(saved.slice(0, 200)));
+    } catch (_) {}
+  }
+}
+
 const getUserId = () => {
   const user = JSON.parse(sessionStorage.getItem("mf_user") || localStorage.getItem("mf_user") || "null");
   return user?.uid || DEMO_UID;
@@ -28,43 +55,55 @@ function hasStoredCollection(uid, key) {
 }
 
 function readStoredCollection(uid, key, fallback = []) {
+  const cacheKey = getStorageKey(uid, key);
+  if (memoryCache.has(cacheKey)) return memoryCache.get(cacheKey);
   try {
-    const stored = localStorage.getItem(getStorageKey(uid, key));
-    return stored ? JSON.parse(stored) : fallback;
+    const stored = localStorage.getItem(cacheKey);
+    const value = stored ? JSON.parse(stored) : fallback;
+    memoryCache.set(cacheKey, value);
+    return value;
   } catch {
     return fallback;
   }
 }
 
 function saveStoredCollection(uid, key, data) {
-  localStorage.setItem(getStorageKey(uid, key), JSON.stringify(data));
+  const cacheKey = getStorageKey(uid, key);
+  memoryCache.set(cacheKey, data);
+  try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch (_) {}
 }
 
-async function saveActivity(uid, action, message, meta = {}) {
+export async function saveActivity(uid, action, message, meta = {}) {
   const activeUid = getActiveUid(uid);
-  const entry = {
+  await logUserActivity({
+    userId: activeUid,
     action,
-    message,
-    meta,
-    createdAt: serverTimestamp()
-  };
+    details: message,
+    metadata: meta
+  });
 
   try {
-    await addDoc(collection(db, "users", activeUid, "activity"), entry);
-  } catch {
-    const list = readStoredCollection(activeUid, "activity", []);
+    const list = readStoredCollection(activeUid, "activity");
     saveStoredCollection(activeUid, "activity", [
-      { ...entry, createdAt: new Date().toISOString() },
+      {
+        action,
+        message,
+        meta,
+        createdAt: new Date().toISOString()
+      },
       ...list
     ].slice(0, 200));
-  }
+  } catch {}
 }
 
-function refreshInBackground(uid, key, loaderFn, fallback) {
-  if (!hasStoredCollection(uid, key)) return;
-  loaderFn().catch(() => {}).then(data => {
-    if (data) saveStoredCollection(uid, key, data);
-  });
+function refreshInBackground(uid, key, loaderFn) {
+  const refreshKey = `${uid || DEMO_UID}:${key}`;
+  if (backgroundRefreshes.has(refreshKey)) return;
+  backgroundRefreshes.add(refreshKey);
+  loaderFn()
+    .then(data => { if (data) saveStoredCollection(uid, key, data); })
+    .catch(() => {})
+    .finally(() => backgroundRefreshes.delete(refreshKey));
 }
 
 function createId() {
@@ -74,7 +113,7 @@ function createId() {
 /* ---------- Profile ---------- */
 export async function getProfile(uid) {
   const activeUid = getActiveUid(uid);
-  const cached = readStoredCollection(activeUid, "profile", PROFILE_FALLBACK);
+  const cached = readStoredCollection(activeUid, "profile");
 
   if (hasStoredCollection(activeUid, "profile")) {
     refreshInBackground(activeUid, "profile", async () => {
@@ -85,7 +124,7 @@ export async function getProfile(uid) {
       const profileData = profileSnap.exists() ? profileSnap.data() : {};
       const userData = userSnap.exists() ? userSnap.data() : {};
       return { ...PROFILE_FALLBACK, ...userData, ...profileData };
-    }, PROFILE_FALLBACK);
+    });
     return cached;
   }
 
@@ -124,13 +163,13 @@ export async function saveProfile(uid, data) {
 /* ---------- Settings ---------- */
 export async function getSettings(uid) {
   const activeUid = getActiveUid(uid);
-  const cached = readStoredCollection(activeUid, "settings", SETTINGS_FALLBACK);
+  const cached = readStoredCollection(activeUid, "settings");
 
   if (hasStoredCollection(activeUid, "settings")) {
     refreshInBackground(activeUid, "settings", async () => {
       const snap = await getDoc(doc(db, "users", activeUid, "settings", "main"));
       return snap.exists() ? snap.data() : cached;
-    }, SETTINGS_FALLBACK);
+    });
     return cached;
   }
 
@@ -155,44 +194,91 @@ export async function saveSettings(uid, data) {
 }
 
 /* ---------- Transactions ---------- */
-export async function getTransactions(uid) {
+export async function getTransactions(uid, options = {}) {
   const activeUid = getActiveUid(uid);
-  const cached = readStoredCollection(activeUid, "transactions", []).sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  const forceRefresh = Boolean(options.forceRefresh);
+  const cached = [...readStoredCollection(activeUid, "transactions", [])]
+    .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
-  if (hasStoredCollection(activeUid, "transactions")) {
-    refreshInBackground(activeUid, "transactions", async () => {
-      const q = query(collection(db, "users", activeUid, "transactions"), orderBy("date", "desc"));
-      const snap = await getDocs(q);
-      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }, []);
+  const loadFromFirestore = async () => {
+    const q = query(collection(db, "users", activeUid, "transactions"), orderBy("date", "desc"));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  };
+
+  if (!forceRefresh && hasStoredCollection(activeUid, "transactions")) {
+    refreshInBackground(activeUid, "transactions", loadFromFirestore);
     return cached;
   }
 
   try {
-    const q = query(collection(db, "users", activeUid, "transactions"), orderBy("date", "desc"));
-    const snap = await getDocs(q);
-    const list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const list = await loadFromFirestore();
     saveStoredCollection(activeUid, "transactions", list);
     return list;
   } catch {
     return cached;
   }
 }
+
+export async function getAvailableBalance(uid, options = {}) {
+  const transactions = await getTransactions(uid, options);
+  return transactions.reduce((balance, tx) => {
+    const amount = Number(tx.amount) || 0;
+    return balance + (tx.type === "income" ? amount : tx.type === "expense" ? -amount : 0);
+  }, 0);
+}
+
 export async function addTransaction(uid, tx) {
   const activeUid = getActiveUid(uid);
+  const amount = Number(tx.amount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("INVALID_AMOUNT");
+  }
+
+  // Every expense, including savings transfers, must pass the same balance check.
+  // We refresh from Firestore at save time so a stale browser cache cannot approve an expense.
+  if (tx.type === "expense") {
+    const balance = await getAvailableBalance(activeUid, { forceRefresh: true });
+    if (balance <= 0 || amount >= balance) {
+      const error = new Error("Insufficient funds");
+      error.code = "INSUFFICIENT_FUNDS";
+      error.availableBalance = balance;
+      throw error;
+    }
+  }
+
   try {
     const docRef = await addDoc(collection(db, "users", activeUid, "transactions"), {
       ...tx,
+      amount,
       userId: activeUid,
       createdAt: serverTimestamp()
     });
-    await saveActivity(activeUid, "transaction_added", `${tx.type === 'income' ? 'Income' : 'Expense'} added: ${tx.desc}`, { txId: docRef.id, amount: tx.amount, category: tx.category, date: tx.date });
+
+    const current = readStoredCollection(activeUid, "transactions", []);
+    saveStoredCollection(activeUid, "transactions", [
+      { id: docRef.id, ...tx, amount, userId: activeUid },
+      ...current.filter(item => item.id !== docRef.id)
+    ]);
+
+    logUserActivity({
+      userId: activeUid,
+      action: "transaction_added",
+      details: `${tx.type === 'income' ? 'Income' : 'Expense'} added: ${tx.desc}`,
+      metadata: { txId: docRef.id, amount, category: tx.category, date: tx.date }
+    }).catch(() => {});
     return docRef;
-  } catch {
+  } catch (error) {
+    if (error?.code === "INSUFFICIENT_FUNDS") throw error;
     const list = readStoredCollection(activeUid, "transactions", []);
-    const item = { id: createId(), ...tx, createdAt: new Date().toISOString() };
+    const item = { id: createId(), ...tx, amount, createdAt: new Date().toISOString() };
     saveStoredCollection(activeUid, "transactions", [item, ...list]);
-    await saveActivity(activeUid, "transaction_added", `${tx.type === 'income' ? 'Income' : 'Expense'} added: ${tx.desc}`, { txId: item.id, amount: tx.amount, category: tx.category, date: tx.date });
+    logUserActivity({
+      userId: activeUid,
+      action: "transaction_added",
+      details: `${tx.type === 'income' ? 'Income' : 'Expense'} added: ${tx.desc}`,
+      metadata: { txId: item.id, amount, category: tx.category, date: tx.date }
+    }).catch(() => {});
     return item;
   }
 }
@@ -200,9 +286,11 @@ export async function updateTransaction(uid, id, tx) {
   const activeUid = getActiveUid(uid);
   try {
     await updateDoc(doc(db, "users", activeUid, "transactions", id), tx);
+    const list = readStoredCollection(activeUid, "transactions", []);
+    saveStoredCollection(activeUid, "transactions", list.map(item => item.id === id ? { ...item, ...tx } : item));
     await saveActivity(activeUid, "transaction_updated", `Transaction updated`, { txId: id, ...tx });
   } catch {
-    const list = readStoredCollection(activeUid, "transactions", []);
+    const list = readStoredCollection(activeUid, "transactions");
     saveStoredCollection(activeUid, "transactions", list.map(item => item.id === id ? { ...item, ...tx } : item));
     await saveActivity(activeUid, "transaction_updated", `Transaction updated`, { txId: id, ...tx });
   }
@@ -211,9 +299,11 @@ export async function deleteTransaction(uid, id) {
   const activeUid = getActiveUid(uid);
   try {
     await deleteDoc(doc(db, "users", activeUid, "transactions", id));
+    const list = readStoredCollection(activeUid, "transactions", []);
+    saveStoredCollection(activeUid, "transactions", list.filter(item => item.id !== id));
     await saveActivity(activeUid, "transaction_deleted", `Transaction deleted`, { txId: id });
   } catch {
-    const list = readStoredCollection(activeUid, "transactions", []);
+    const list = readStoredCollection(activeUid, "transactions");
     saveStoredCollection(activeUid, "transactions", list.filter(item => item.id !== id));
     await saveActivity(activeUid, "transaction_deleted", `Transaction deleted`, { txId: id });
   }
@@ -222,13 +312,13 @@ export async function deleteTransaction(uid, id) {
 /* ---------- Budgets ---------- */
 export async function getBudgets(uid) {
   const activeUid = getActiveUid(uid);
-  const cached = readStoredCollection(activeUid, "budgets", []);
+  const cached = readStoredCollection(activeUid, "budgets");
 
   if (hasStoredCollection(activeUid, "budgets")) {
     refreshInBackground(activeUid, "budgets", async () => {
       const snap = await getDocs(collection(db, "users", activeUid, "budgets"));
       return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }, []);
+    });
     return cached;
   }
 
@@ -255,7 +345,7 @@ export async function setBudget(uid, data) {
       return existing.docs[0].id;
     }
   } catch {
-    const list = readStoredCollection(activeUid, "budgets", []);
+    const list = readStoredCollection(activeUid, "budgets");
     const existing = list.find(item => item.category === data.category);
     if (existing) {
       const updated = list.map(item => item.category === data.category ? { ...item, limit: data.limit } : item);
@@ -275,7 +365,7 @@ export async function deleteBudget(uid, id) {
     await deleteDoc(doc(db, "users", activeUid, "budgets", id));
     await saveActivity(activeUid, "budget_deleted", `Budget deleted`, { budgetId: id });
   } catch {
-    const list = readStoredCollection(activeUid, "budgets", []);
+    const list = readStoredCollection(activeUid, "budgets");
     saveStoredCollection(activeUid, "budgets", list.filter(item => item.id !== id));
     await saveActivity(activeUid, "budget_deleted", `Budget deleted`, { budgetId: id });
   }
@@ -284,13 +374,13 @@ export async function deleteBudget(uid, id) {
 /* ---------- Goals ---------- */
 export async function getGoals(uid) {
   const activeUid = getActiveUid(uid);
-  const cached = readStoredCollection(activeUid, "goals", []);
+  const cached = readStoredCollection(activeUid, "goals");
 
   if (hasStoredCollection(activeUid, "goals")) {
     refreshInBackground(activeUid, "goals", async () => {
       const snap = await getDocs(collection(db, "users", activeUid, "goals"));
       return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }, []);
+    });
     return cached;
   }
 
@@ -310,7 +400,7 @@ export async function addGoal(uid, goal) {
     await saveActivity(activeUid, "goal_created", `Goal created: ${goal.name}`, { goalId: docRef.id, ...goal });
     return docRef;
   } catch {
-    const list = readStoredCollection(activeUid, "goals", []);
+    const list = readStoredCollection(activeUid, "goals");
     const item = { id: createId(), ...goal };
     saveStoredCollection(activeUid, "goals", [item, ...list]);
     await saveActivity(activeUid, "goal_created", `Goal created: ${goal.name}`, { goalId: item.id, ...goal });
@@ -323,7 +413,7 @@ export async function updateGoal(uid, id, data) {
     await updateDoc(doc(db, "users", activeUid, "goals", id), data);
     await saveActivity(activeUid, "goal_updated", `Goal updated`, { goalId: id, ...data });
   } catch {
-    const list = readStoredCollection(activeUid, "goals", []);
+    const list = readStoredCollection(activeUid, "goals");
     saveStoredCollection(activeUid, "goals", list.map(item => item.id === id ? { ...item, ...data } : item));
     await saveActivity(activeUid, "goal_updated", `Goal updated`, { goalId: id, ...data });
   }
@@ -334,7 +424,7 @@ export async function deleteGoal(uid, id) {
     await deleteDoc(doc(db, "users", activeUid, "goals", id));
     await saveActivity(activeUid, "goal_deleted", `Goal deleted`, { goalId: id });
   } catch {
-    const list = readStoredCollection(activeUid, "goals", []);
+    const list = readStoredCollection(activeUid, "goals");
     saveStoredCollection(activeUid, "goals", list.filter(item => item.id !== id));
     await saveActivity(activeUid, "goal_deleted", `Goal deleted`, { goalId: id });
   }

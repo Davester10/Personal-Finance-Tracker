@@ -67,10 +67,9 @@ function getFilteredTransactions() {
 }
 
 function getBalance() {
-  const filtered = getFilteredTransactions();
-  const inc = filtered.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
-  const exp = filtered.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
-  return Math.max(0, inc - exp);
+  const inc = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+(Number(t.amount)||0),0);
+  const exp = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+(Number(t.amount)||0),0);
+  return inc - exp;
 }
 
 window.renderSavings = function() {
@@ -116,17 +115,22 @@ window.saveFundsToGoal = async function() {
   if(!amount || amount<=0){ showToast('<i class="fa-solid fa-circle-exclamation"></i> Enter a valid amount'); return; }
   const balance = getBalance();
   const sym = profile.currency || '₦';
-  if(amount > balance){ showToast(`<i class="fa-solid fa-circle-exclamation"></i> Insufficient funds (${sym}${balance.toLocaleString('en-NG')})`); return; }
+  if(balance <= 0 || amount >= balance){ showToast(`<i class="fa-solid fa-circle-exclamation"></i> Insufficient funds`); return; }
 
   const u = uid(); if(!u) return;
   const goal = goals.find(g=>g.id===selectedGoalId);
   if(!goal){ showToast('Goal not found'); closeModal('addFundsModal'); return; }
 
+  try {
+    await addTransaction(u, {
+      type: 'expense', amount, desc: `Savings transfer to ${goal.name}`,
+      category: 'Savings', date: todayDateString(), note: note || 'Savings goal transfer'
+    });
+  } catch (error) {
+    showToast('<i class="fa-solid fa-circle-exclamation"></i> Insufficient funds');
+    return;
+  }
   await updateGoal(u, selectedGoalId, { saved: (goal.saved||0) + amount });
-  await addTransaction(u, {
-    type: 'expense', amount, desc: `Savings transfer to ${goal.name}`,
-    category: 'Savings', date: todayDateString(), note: note || 'Savings goal transfer'
-  });
   closeModal('addFundsModal');
   if (typeof window.resetAddFundsForm === 'function') {
     window.resetAddFundsForm();
@@ -160,9 +164,14 @@ window.saveSavingsGoal = async function() {
   const goalData = { name, target, saved, desc };
   if(saved>0) {
     const balance = getBalance();
-    if(saved > balance){ showToast('<i class="fa-solid fa-circle-exclamation"></i> Insufficient funds'); return; }
+    if(balance <= 0 || saved >= balance){ showToast('<i class="fa-solid fa-circle-exclamation"></i> Insufficient funds'); return; }
     const { addTransaction } = await import("./firebase.js");
-    await addTransaction(u, { type:'expense', amount:saved, desc:`Initial savings for ${name}`, category:'Savings', date:todayDateString(), note:'Savings goal initial transfer' });
+    try {
+      await addTransaction(u, { type:'expense', amount:saved, desc:`Initial savings for ${name}`, category:'Savings', date:todayDateString(), note:'Savings goal initial transfer' });
+    } catch (error) {
+      showToast('<i class="fa-solid fa-circle-exclamation"></i> Insufficient funds');
+      return;
+    }
   }
   await addGoal(u, goalData);
   closeModal('savingsModal');

@@ -142,8 +142,13 @@
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showWarn('register-warning','Enter a valid email.'); return; }
       if(pass.length<6){ showWarn('register-warning','Password must be at least 6 characters.'); return; }
       if(pass!==confirm){ showWarn('register-warning','Passwords do not match.'); return; }
-      try { await registerUser(name, email, pass); showToast('<i class="fa-solid fa-circle-check"></i> Account created!'); }
-      catch(e){ showWarn('register-warning', e.message); }
+      try {
+        await registerUser(name, email, pass);
+        showToast('<i class="fa-solid fa-circle-check"></i> Account created! Please sign in.');
+        document.getElementById('si-email').value = email;
+        document.getElementById('si-pass').value = '';
+        showTab('signin');
+      } catch(e){ showWarn('register-warning', e.message); }
     });
 
     document.getElementById('btn-signin').addEventListener('click', async () => {
@@ -171,6 +176,12 @@
         else { input.type='password'; btn.innerHTML='<i class="fa-solid fa-eye"></i>'; }
       });
     });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js').catch(err => console.warn('Service worker registration failed:', err));
+      });
+    }
   </script>
 </body>
 </html>

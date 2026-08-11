@@ -101,7 +101,16 @@ window.saveTransaction = async function() {
 
   const u = uid(); if(!u) return;
   const { addTransaction } = await import("./firebase.js");
-  await addTransaction(u, { type, amount, desc, category, date, note });
+  try {
+    await addTransaction(u, { type, amount, desc, category, date, note });
+  } catch (error) {
+    if (error?.code === 'INSUFFICIENT_FUNDS' || error?.message === 'Insufficient funds') {
+      showToast('<i class="fa-solid fa-circle-exclamation"></i> Insufficient funds');
+    } else {
+      showToast('<i class="fa-solid fa-circle-exclamation"></i> Unable to save transaction');
+    }
+    return;
+  }
   closeModal('txModal');
   if (typeof window.resetTransactionForm === 'function') {
     window.resetTransactionForm();

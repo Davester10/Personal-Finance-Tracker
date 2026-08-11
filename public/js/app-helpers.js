@@ -2,6 +2,7 @@ import { initAuth, getCurrentUser } from "./auth.js";
 import {
   addTransaction,
   getTransactions,
+  getAvailableBalance,
   addGoal,
   getGoals,
   setBudget,
@@ -96,6 +97,21 @@ async function refreshAfterAction() {
   } catch (_) {}
 }
 
+function clearTxValidationState() {
+  const errorEl = document.getElementById('txFormError');
+  const submitBtn = document.getElementById('txSaveBtn');
+  if (errorEl) {
+    errorEl.textContent = '';
+    errorEl.classList.add('hidden');
+    errorEl.classList.remove('flex');
+  }
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-slate-400', 'hover:bg-slate-400');
+    submitBtn.classList.add('bg-primary-600', 'hover:bg-primary-700');
+  }
+}
+
 function resetTransactionForm() {
   const txType = document.getElementById('txType');
   const txAmount = document.getElementById('txAmount');
@@ -110,6 +126,7 @@ function resetTransactionForm() {
   if (txCategory) txCategory.value = 'Food';
   if (txDate) txDate.value = todayDateString();
   if (txNote) txNote.value = '';
+  clearTxValidationState();
 }
 
 window.resetTransactionForm = resetTransactionForm;
@@ -167,6 +184,53 @@ function resetAddFundsForm() {
   if (note) note.value = '';
 }
 
+function setTxValidationError(message) {
+  const errorEl = document.getElementById('txFormError');
+  const submitBtn = document.getElementById('txSaveBtn');
+
+  if (errorEl) {
+    errorEl.textContent = message || '';
+    errorEl.classList.toggle('hidden', !message);
+    errorEl.classList.toggle('flex', !!message);
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = !!message;
+    submitBtn.classList.toggle('opacity-50', !!message);
+    submitBtn.classList.toggle('cursor-not-allowed', !!message);
+    submitBtn.classList.toggle('bg-slate-400', !!message);
+    submitBtn.classList.toggle('hover:bg-slate-400', !!message);
+    submitBtn.classList.toggle('bg-primary-600', !message);
+    submitBtn.classList.toggle('hover:bg-primary-700', !message);
+  }
+}
+
+async function validateExpenseInput() {
+  const type = document.getElementById('txType')?.value || 'income';
+  const amount = parseFloat(document.getElementById('txAmount')?.value || '0');
+
+  if (type !== 'expense' || !amount || amount <= 0) {
+    clearTxValidationState();
+    return false;
+  }
+
+  const u = uid();
+  if (!u) {
+    clearTxValidationState();
+    return false;
+  }
+
+  const availableBalance = await getAvailableBalance(u);
+
+  if (availableBalance <= 0 || amount >= availableBalance) {
+    setTxValidationError('Insufficient funds');
+    return true;
+  }
+
+  clearTxValidationState();
+  return false;
+}
+
 window.saveTransaction = async function() {
   const type = document.getElementById('txType')?.value || 'expense';
   const amount = parseFloat(document.getElementById('txAmount')?.value);
@@ -190,20 +254,46 @@ window.saveTransaction = async function() {
     return;
   }
 
-  const txs = await getTransactions(u);
-  const balance = txs.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0) - txs.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
-
-  if (type === 'expense' && amount > balance) {
-    showToast('<i class="fa-solid fa-circle-exclamation"></i> Insufficient funds');
-    return;
+  if (type === 'expense') {
+    const availableBalance = await getAvailableBalance(u);
+    if (availableBalance <= 0 || amount >= availableBalance) {
+      setTxValidationError('Insufficient funds');
+      showToast('<i class="fa-solid fa-circle-exclamation"></i> Insufficient funds');
+      return;
+    }
   }
 
+  clearTxValidationState();
   await addTransaction(u, { type, amount, desc, category, date, note });
   closeModal('txModal');
   resetTransactionForm();
   showToast(type === 'income' ? '<i class="fa-solid fa-money-bill-wave"></i> Income added!' : '<i class="fa-solid fa-wallet"></i> Expense added!');
   await refreshAfterAction();
 };
+
+const txInput = document.getElementById('txAmount');
+if (txInput) {
+  txInput.addEventListener('input', async () => {
+    const type = document.getElementById('txType')?.value || 'income';
+    if (type === 'expense') {
+      await validateExpenseInput();
+    } else {
+      clearTxValidationState();
+    }
+  });
+}
+
+const txTypeField = document.getElementById('txType');
+if (txTypeField) {
+  txTypeField.addEventListener('change', async () => {
+    const type = document.getElementById('txType')?.value || 'income';
+    if (type === 'expense') {
+      await validateExpenseInput();
+    } else {
+      clearTxValidationState();
+    }
+  });
+}
 
 window.saveBudget = async function() {
   const category = document.getElementById('budgetCategory')?.value || 'Others';
@@ -296,3 +386,11 @@ window.toggleDarkMode = async function() {
 };
 
 bootstrapHeaderProfile();
+
+
+// Register the PWA service worker once so repeat visits load static assets from cache.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('../service-worker.js').catch(err => console.warn('Service worker registration failed:', err));
+  });
+}
