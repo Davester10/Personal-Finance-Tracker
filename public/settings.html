@@ -81,7 +81,7 @@
       </div>
     </nav>
     <div class="px-3 py-4 border-t border-slate-200">
-      <button id="logoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors">
+      <button id="logoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-sm">
         <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout
       </button>
     </div>
@@ -127,7 +127,7 @@
       <a href="settings.html#profile" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors ml-4">
         <i class="fa-solid fa-user w-5 text-center"></i> Profile
       </a>
-      <button id="drawerLogoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors mt-2">
+      <button id="drawerLogoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors mt-2 shadow-sm">
         <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout
       </button>
     </nav>
@@ -149,33 +149,47 @@
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+        <div class="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 shadow-sm">
           <i class="fa-solid fa-calendar text-slate-400 text-sm"></i>
-          <select id="monthFilter" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer"></select>
-          <select id="yearFilter" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer"></select>
+          <select id="monthFilter" class="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"></select>
+          <select id="yearFilter" class="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"></select>
         </div>
-        <div id="headerAvatar" class="w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm">U</div>
+        <button onclick="window.openNotificationDrawer()" class="relative w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-primary-50 dark:hover:bg-slate-700 transition-colors shadow-sm" title="Smart Alerts & Activity">
+          <i class="fa-solid fa-bell text-sm"></i>
+          <span class="smart-notif-badge hidden absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-extrabold items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm"></span>
+        </button>
+        <div id="headerAvatar" onclick="window.Router.navigate('settings.html')" class="w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:opacity-90 transition-opacity">U</div>
       </div>
     </header>
 
     
 <div class="flex items-center justify-between mb-6">
-  <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-cog text-primary-600"></i> Settings</h2>
+  <h2 class="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-cog text-primary-600"></i> Settings</h2>
 </div>
 
-<div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-  <div class="p-5 flex items-center justify-between border-b border-slate-100">
+<div class="bg-white dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm overflow-hidden mb-6">
+  <div class="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60">
     <div>
-      <div class="font-semibold text-slate-900">Dark Mode</div>
+      <div class="font-semibold text-slate-900 dark:text-white">Dark Mode</div>
       <div class="text-xs text-slate-500 mt-0.5">Switch between light and dark theme</div>
     </div>
     <label class="relative inline-flex items-center cursor-pointer">
       <input type="checkbox" id="darkModeToggle" class="sr-only peer" onchange="toggleDarkMode()">
-      <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+      <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
     </label>
   </div>
-  <div class="p-5 border-b border-slate-100">
-    <div class="font-semibold text-slate-900 mb-4">Profile</div>
+  <div class="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60">
+    <div>
+      <div class="font-semibold text-slate-900 dark:text-white">Smart Audio Cues</div>
+      <div class="text-xs text-slate-500 mt-0.5">Play subtle audio micro-chimes for actions, budget warnings, and milestones</div>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox" id="soundToggle" class="sr-only peer" onchange="toggleSoundEffects()" checked>
+      <div class="w-11 h-6 bg-slate-200 dark:bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+    </label>
+  </div>
+  <div class="p-5 border-b border-slate-100 dark:border-slate-700/60">
+    <div class="font-semibold text-slate-900 dark:text-white mb-4">Profile</div>
     <div class="flex items-center gap-5 mb-5">
       <div id="profileAvatarBig" class="w-20 h-20 rounded-full bg-primary-600 text-white flex items-center justify-center text-3xl font-bold">U</div>
       <div>
@@ -183,17 +197,17 @@
       </div>
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <label class="block text-sm font-medium text-slate-700">Full Name
-        <input type="text" id="profileName" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="Your Name" />
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Full Name
+        <input type="text" id="profileName" class="mt-1 w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="Your Name" />
       </label>
-      <label class="block text-sm font-medium text-slate-700">Email
-        <input type="email" id="profileEmail" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="your@email.com" />
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Email
+        <input type="email" id="profileEmail" class="mt-1 w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="your@email.com" />
       </label>
-      <label class="block text-sm font-medium text-slate-700">Phone
-        <input type="tel" id="profilePhone" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="+234..." />
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Phone
+        <input type="tel" id="profilePhone" class="mt-1 w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="+234..." />
       </label>
-      <label class="block text-sm font-medium text-slate-700">Currency
-        <select id="profileCurrency" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all">
+      <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Currency
+        <select id="profileCurrency" class="mt-1 w-full rounded-lg border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all">
           <option value="₦">₦ Nigerian Naira</option>
           <option value="$">$ US Dollar</option>
           <option value="€">€ Euro</option>
@@ -204,27 +218,24 @@
     </div>
     <button onclick="saveProfile()" class="mt-4 px-5 py-2.5 rounded-xl bg-primary-600 text-white font-semibold text-sm hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20">Save Profile</button>
   </div>
-  <div class="p-5 flex items-center justify-between border-b border-slate-100">
+  <div class="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60">
     <div>
-      <div class="font-semibold text-slate-900">Notifications</div>
-      <div class="text-xs text-slate-500 mt-0.5">Budget limit alerts (coming soon)</div>
+      <div class="font-semibold text-slate-900 dark:text-white">Smart Financial Alerts</div>
+      <div class="text-xs text-slate-500 mt-0.5">Real-time budget limit analysis, low balance alerts & 5-second undo</div>
     </div>
-    <label class="relative inline-flex items-center cursor-pointer opacity-50">
-      <input type="checkbox" disabled class="sr-only peer">
-      <div class="w-11 h-6 bg-slate-200 rounded-full peer after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"></div>
-    </label>
+    <button onclick="window.openNotificationDrawer()" class="px-3.5 py-2 rounded-xl bg-primary-50 dark:bg-primary-950/60 text-primary-600 dark:text-primary-400 text-xs font-bold hover:bg-primary-600 hover:text-white transition-colors">Open History</button>
   </div>
-  <div class="p-5 flex items-center justify-between border-b border-slate-100 bg-red-50/50">
+  <div class="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-700/60 bg-red-50/50 dark:bg-red-950/20">
     <div>
-      <div class="font-semibold text-red-700">Clear All Data</div>
-      <div class="text-xs text-red-500/80 mt-0.5">Permanently delete all transactions, goals, and budgets</div>
+      <div class="font-semibold text-red-700 dark:text-red-400">Clear All Data</div>
+      <div class="text-xs text-red-500/80 mt-0.5">Reset transactions, goals, and budgets for this session</div>
     </div>
-    <button onclick="clearAllData()" class="px-4 py-2 rounded-xl bg-red-100 text-red-700 font-semibold text-sm hover:bg-red-200 transition-colors">Clear Data</button>
+    <button onclick="clearAllData()" class="px-4 py-2 rounded-xl bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-300 font-semibold text-sm hover:bg-red-200 transition-colors">Clear Data</button>
   </div>
   <div class="p-5 flex items-center justify-between">
     <div>
-      <div class="font-semibold text-slate-900">App Version</div>
-      <div class="text-xs text-slate-500 mt-0.5">MyFinance v2.0.0 • Firebase + Tailwind</div>
+      <div class="font-semibold text-slate-900 dark:text-white">App Version</div>
+      <div class="text-xs text-slate-500 mt-0.5">MyFinance v2.5.0 • Instant Navigation & Smart Alerts</div>
     </div>
   </div>
 </div>
@@ -251,7 +262,7 @@
   </nav>
 
   <!-- Toast -->
-  <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 translate-y-4 opacity-0 pointer-events-none bg-slate-900 text-white px-5 py-3 rounded-full text-sm font-medium shadow-xl transition-all duration-300 z-[9999]"></div>
+  <div id="toast" class="fixed top-4 right-4 sm:top-auto sm:bottom-20 sm:left-1/2 sm:-translate-x-1/2 -translate-y-4 sm:translate-y-4 opacity-0 pointer-events-none bg-slate-900 text-white px-5 py-3 rounded-full text-sm font-medium shadow-xl transition-all duration-300 z-[9999]"></div>
 
   <!-- Transaction Modal -->
   <div id="txModal" class="fixed inset-0 z-[100] hidden items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4">
@@ -274,7 +285,7 @@
         </label>
         <label class="block text-sm font-medium text-slate-700">Category
           <select id="txCategory" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all">
-            <option>Food</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Education</option><option>Health</option><option>Entertainment</option><option>Salary</option><option>Business</option><option>Investment</option><option>Gift</option><option>Others</option>
+            <option>Salary</option><option>Gift</option><option>Investment</option><option>Others</option>
           </select>
         </label>
         <label class="block text-sm font-medium text-slate-700">Date
@@ -317,7 +328,7 @@
       <div class="px-6 py-5 space-y-4">
         <label class="block text-sm font-medium text-slate-700">Category
           <select id="budgetCategory" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all">
-            <option>Food</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Education</option><option>Health</option><option>Entertainment</option><option>Others</option>
+            <option>Food/groceries</option><option>Bills</option><option>Transport</option><option>Education</option><option>Shopping</option><option>Skincare</option><option>Health</option><option>Entertainment</option>
           </select>
         </label>
         <label class="block text-sm font-medium text-slate-700">Monthly Limit (₦)
@@ -416,7 +427,17 @@
     document.getElementById('fabBtn')?.addEventListener('click', () => openModal('txModal'));
 
     // Modal helpers
-    window.openModal = function(id) { const el=document.getElementById(id); el.classList.remove('hidden'); el.classList.add('flex'); };
+    window.openModal = function(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      }
+      if (id === 'txModal' && typeof window.updateTxCategoryOptions === 'function') {
+        const txType = document.getElementById('txType')?.value || 'income';
+        window.updateTxCategoryOptions(txType);
+      }
+    };
     window.closeModal = function(id) {
       const el=document.getElementById(id);
       if (el) {

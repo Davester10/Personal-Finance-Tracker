@@ -81,7 +81,7 @@
       </div>
     </nav>
     <div class="px-3 py-4 border-t border-slate-200">
-      <button id="logoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors">
+      <button id="logoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors shadow-sm">
         <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout
       </button>
     </div>
@@ -127,7 +127,7 @@
       <a href="settings.html#profile" class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-primary-50 hover:text-primary-700 transition-colors ml-4">
         <i class="fa-solid fa-user w-5 text-center"></i> Profile
       </a>
-      <button id="drawerLogoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors mt-2">
+      <button id="drawerLogoutBtn" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors mt-2 shadow-sm">
         <i class="fa-solid fa-right-from-bracket w-5 text-center"></i> Logout
       </button>
     </nav>
@@ -149,19 +149,23 @@
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2 shadow-sm">
+        <div class="flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 shadow-sm">
           <i class="fa-solid fa-calendar text-slate-400 text-sm"></i>
-          <select id="monthFilter" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer"></select>
-          <select id="yearFilter" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer"></select>
+          <select id="monthFilter" class="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"></select>
+          <select id="yearFilter" class="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"></select>
         </div>
-        <div id="headerAvatar" class="w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm">U</div>
+        <button onclick="window.openNotificationDrawer()" class="relative w-10 h-10 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center hover:bg-primary-50 dark:hover:bg-slate-700 transition-colors shadow-sm" title="Smart Alerts & Activity">
+          <i class="fa-solid fa-bell text-sm"></i>
+          <span class="smart-notif-badge hidden absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-extrabold items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm"></span>
+        </button>
+        <div id="headerAvatar" onclick="window.Router.navigate('settings.html')" class="w-10 h-10 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm cursor-pointer shadow-sm hover:opacity-90 transition-opacity">U</div>
       </div>
     </header>
 
     
 <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
   <h2 class="text-xl font-extrabold text-slate-900 flex items-center gap-2"><i class="fa-solid fa-chart-line text-expense-600"></i> Expenses</h2>
-  <button onclick="openModal('txModal'); document.getElementById('txType').value='expense';" class="px-4 py-2.5 rounded-xl bg-expense-600 text-white font-semibold text-sm hover:bg-expense-700 transition-colors shadow-lg shadow-expense-500/20">+ Add Expense</button>
+  <button onclick="openModal('txModal'); document.getElementById('txType').value='expense'; if(typeof window.updateTxCategoryOptions==='function') window.updateTxCategoryOptions('expense');" class="px-4 py-2.5 rounded-xl bg-expense-600 text-white font-semibold text-sm hover:bg-expense-700 transition-colors shadow-lg shadow-expense-500/20">+ Add Expense</button>
 </div>
 <div class="flex gap-4 mb-5 flex-wrap">
   <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex-1 min-w-[140px]">
@@ -177,6 +181,14 @@
   <input type="text" id="expenseSearch" oninput="renderExpenses()" placeholder="Search expenses..." class="flex-1 min-w-[160px] rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all shadow-sm" />
   <select id="expenseCatFilter" onchange="renderExpenses()" class="rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all shadow-sm cursor-pointer">
     <option value="">All Categories</option>
+    <option value="Food/groceries">Food/groceries</option>
+    <option value="Bills">Bills</option>
+    <option value="Transport">Transport</option>
+    <option value="Education">Education</option>
+    <option value="Shopping">Shopping</option>
+    <option value="Skincare">Skincare</option>
+    <option value="Health">Health</option>
+    <option value="Entertainment">Entertainment</option>
   </select>
 </div>
 <div id="expenseList" class="bg-white rounded-2xl border border-slate-200 shadow-sm divide-y divide-slate-100"></div>
@@ -203,7 +215,7 @@
   </nav>
 
   <!-- Toast -->
-  <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 translate-y-4 opacity-0 pointer-events-none bg-slate-900 text-white px-5 py-3 rounded-full text-sm font-medium shadow-xl transition-all duration-300 z-[9999]"></div>
+  <div id="toast" class="fixed top-4 right-4 sm:top-auto sm:bottom-20 sm:left-1/2 sm:-translate-x-1/2 -translate-y-4 sm:translate-y-4 opacity-0 pointer-events-none bg-slate-900 text-white px-5 py-3 rounded-full text-sm font-medium shadow-xl transition-all duration-300 z-[9999]"></div>
 
   <!-- Transaction Modal -->
   <div id="txModal" class="fixed inset-0 z-[100] hidden items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-sm p-0 sm:p-4">
@@ -227,7 +239,7 @@
         </label>
         <label class="block text-sm font-medium text-slate-700">Category
           <select id="txCategory" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all">
-            <option>Food</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Education</option><option>Health</option><option>Entertainment</option><option>Salary</option><option>Business</option><option>Investment</option><option>Gift</option><option>Others</option>
+            <option>Food/groceries</option><option>Bills</option><option>Transport</option><option>Education</option><option>Shopping</option><option>Skincare</option><option>Health</option><option>Entertainment</option>
           </select>
         </label>
         <label class="block text-sm font-medium text-slate-700">Date
@@ -270,7 +282,7 @@
       <div class="px-6 py-5 space-y-4">
         <label class="block text-sm font-medium text-slate-700">Category
           <select id="budgetCategory" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all">
-            <option>Food</option><option>Transport</option><option>Shopping</option><option>Bills</option><option>Education</option><option>Health</option><option>Entertainment</option><option>Others</option>
+            <option>Food/groceries</option><option>Bills</option><option>Transport</option><option>Education</option><option>Shopping</option><option>Skincare</option><option>Health</option><option>Entertainment</option>
           </select>
         </label>
         <label class="block text-sm font-medium text-slate-700">Monthly Limit (₦)
@@ -369,7 +381,17 @@
     document.getElementById('fabBtn')?.addEventListener('click', () => openModal('txModal'));
 
     // Modal helpers
-    window.openModal = function(id) { const el=document.getElementById(id); el.classList.remove('hidden'); el.classList.add('flex'); };
+    window.openModal = function(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      }
+      if (id === 'txModal' && typeof window.updateTxCategoryOptions === 'function') {
+        const txType = document.getElementById('txType')?.value || 'income';
+        window.updateTxCategoryOptions(txType);
+      }
+    };
     window.closeModal = function(id) {
       const el=document.getElementById(id);
       if (el) {

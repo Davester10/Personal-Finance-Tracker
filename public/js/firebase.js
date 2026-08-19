@@ -33,7 +33,7 @@ export async function logUserActivity({ userId, action, details = {}, metadata =
       const saved = JSON.parse(localStorage.getItem(key) || "[]");
       saved.unshift({ ...payload, timestamp: new Date().toISOString() });
       localStorage.setItem(key, JSON.stringify(saved.slice(0, 200)));
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -70,7 +70,7 @@ function readStoredCollection(uid, key, fallback = []) {
 function saveStoredCollection(uid, key, data) {
   const cacheKey = getStorageKey(uid, key);
   memoryCache.set(cacheKey, data);
-  try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch (_) {}
+  try { localStorage.setItem(cacheKey, JSON.stringify(data)); } catch (_) { }
 }
 
 export async function saveActivity(uid, action, message, meta = {}) {
@@ -93,7 +93,7 @@ export async function saveActivity(uid, action, message, meta = {}) {
       },
       ...list
     ].slice(0, 200));
-  } catch {}
+  } catch { }
 }
 
 function refreshInBackground(uid, key, loaderFn) {
@@ -102,7 +102,7 @@ function refreshInBackground(uid, key, loaderFn) {
   backgroundRefreshes.add(refreshKey);
   loaderFn()
     .then(data => { if (data) saveStoredCollection(uid, key, data); })
-    .catch(() => {})
+    .catch(() => { })
     .finally(() => backgroundRefreshes.delete(refreshKey));
 }
 
@@ -266,7 +266,7 @@ export async function addTransaction(uid, tx) {
       action: "transaction_added",
       details: `${tx.type === 'income' ? 'Income' : 'Expense'} added: ${tx.desc}`,
       metadata: { txId: docRef.id, amount, category: tx.category, date: tx.date }
-    }).catch(() => {});
+    }).catch(() => { });
     return docRef;
   } catch (error) {
     if (error?.code === "INSUFFICIENT_FUNDS") throw error;
@@ -278,7 +278,7 @@ export async function addTransaction(uid, tx) {
       action: "transaction_added",
       details: `${tx.type === 'income' ? 'Income' : 'Expense'} added: ${tx.desc}`,
       metadata: { txId: item.id, amount, category: tx.category, date: tx.date }
-    }).catch(() => {});
+    }).catch(() => { });
     return item;
   }
 }
@@ -444,6 +444,17 @@ export function todayDateString() {
   return new Date().toISOString().split("T")[0];
 }
 export function showToast(msg) {
+  if (typeof window !== 'undefined' && window.SmartAlerts) {
+    const plainText = typeof msg === 'string' ? msg.replace(/<[^>]*>/g, '').trim() : String(msg);
+    window.SmartAlerts.show({
+      title: 'Activity',
+      message: msg,
+      type: 'info',
+      icon: 'fa-bell',
+      sound: false,
+      record: false
+    });
+  }
   const toast = document.getElementById("toast");
   if (!toast) return;
   toast.innerHTML = msg;
