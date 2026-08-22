@@ -434,6 +434,21 @@ class ReactiveStateStore {
 
   async deleteGoal(id) {
     const goal = this.goals.find(g => g.id === id);
+
+    if (goal) {
+      const saved = Number(goal.saved) || 0;
+      if (saved > 0) {
+        await this.addTransaction({
+          type: 'income',
+          amount: saved,
+          desc: `Savings returned from ${goal.name}`,
+          category: 'Others',
+          date: todayDateString(),
+          note: 'Savings goal deleted and funds returned'
+        });
+      }
+    }
+
     this.goals = this.goals.filter(g => g.id !== id);
     this.emit('goals:changed', this.goals);
 
