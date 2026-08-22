@@ -172,6 +172,12 @@
   <select id="txTypeFilter" onchange="renderTransactions()" class="rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all shadow-sm cursor-pointer">
     <option value="">All Types</option><option value="income">Income</option><option value="expense">Expense</option>
   </select>
+  <select id="txClassFilter" onchange="renderTransactions()" class="rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all shadow-sm cursor-pointer">
+    <option value="">All Classifications</option>
+    <option value="Essential">Essential</option>
+    <option value="Growth">Growth</option>
+    <option value="Optional">Optional</option>
+  </select>
   <select id="txCatFilter" onchange="renderTransactions()" class="rounded-xl border-slate-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all shadow-sm cursor-pointer">
     <option value="">All Categories</option>
   </select>
@@ -215,6 +221,7 @@
             <option value="income">Income</option><option value="expense">Expense</option>
           </select>
         </label>
+        <div id="txFormError" class="hidden items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"></div>
         <label class="block text-sm font-medium text-slate-700">Amount (₦)
           <input type="number" id="txAmount" min="1" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. 5000" />
         </label>
@@ -226,6 +233,23 @@
             <option>Salary</option><option>Gift</option><option>Investment</option><option>Others</option>
           </select>
         </label>
+        <div id="txClassificationContainer" class="hidden">
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            Classification <span class="text-rose-500">*</span>
+          </label>
+          <div class="grid grid-cols-3 gap-2" id="txClassificationGroup">
+            <button type="button" data-val="Essential" onclick="window.selectTxClassification('Essential')" class="tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all">
+              <i class="fa-solid fa-shield-halved text-blue-500"></i> Essential
+            </button>
+            <button type="button" data-val="Growth" onclick="window.selectTxClassification('Growth')" class="tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all">
+              <i class="fa-solid fa-arrow-trend-up text-emerald-500"></i> Growth
+            </button>
+            <button type="button" data-val="Optional" onclick="window.selectTxClassification('Optional')" class="tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all">
+              <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Optional
+            </button>
+          </div>
+          <input type="hidden" id="txClassification" value="" />
+        </div>
         <label class="block text-sm font-medium text-slate-700">Date
           <input type="date" id="txDate" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" />
         </label>

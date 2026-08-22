@@ -11,6 +11,24 @@ import {
 } from "./firebase.js";
 import { SmartAlerts } from "./smart-alerts.js";
 
+export function getDefaultClassification(category) {
+  const map = {
+    'Food/groceries': 'Essential',
+    'Food': 'Essential',
+    'Bills': 'Essential',
+    'Transport': 'Essential',
+    'Health': 'Essential',
+    'Education': 'Growth',
+    'Investment': 'Growth',
+    'Savings': 'Growth',
+    'Shopping': 'Optional',
+    'Skincare': 'Optional',
+    'Entertainment': 'Optional',
+    'Others': 'Optional'
+  };
+  return map[category] || 'Essential';
+}
+
 class ReactiveStateStore {
   constructor() {
     this.uid = null;
@@ -100,6 +118,53 @@ class ReactiveStateStore {
         return d.getMonth() === month && d.getFullYear() === year;
       })
       .reduce((sum, tx) => sum + (Number(tx.amount) || 0), 0);
+  }
+
+  getTransactionClassification(tx) {
+    if (tx.type !== 'expense') return null;
+    return tx.classification || getDefaultClassification(tx.category);
+  }
+
+  getValueBreakdown(month = new Date().getMonth(), year = new Date().getFullYear()) {
+    const expenses = this.transactions.filter(tx => {
+      if (tx.type !== 'expense') return false;
+      const d = new Date(tx.date);
+      return d.getMonth() === month && d.getFullYear() === year;
+    });
+
+    let essential = 0, growth = 0, optional = 0;
+    const essentialItems = [], growthItems = [], optionalItems = [];
+
+    expenses.forEach(tx => {
+      const amt = Number(tx.amount) || 0;
+      const classification = this.getTransactionClassification(tx);
+      if (classification === 'Growth') {
+        growth += amt;
+        growthItems.push(tx);
+      } else if (classification === 'Optional') {
+        optional += amt;
+        optionalItems.push(tx);
+      } else {
+        essential += amt;
+        essentialItems.push(tx);
+      }
+    });
+
+    const total = essential + growth + optional;
+    return {
+      essential,
+      growth,
+      optional,
+      total,
+      essentialPct: total > 0 ? Math.round((essential / total) * 100) : 0,
+      growthPct: total > 0 ? Math.round((growth / total) * 100) : 0,
+      optionalPct: total > 0 ? Math.round((optional / total) * 100) : 0,
+      essentialCount: essentialItems.length,
+      growthCount: growthItems.length,
+      optionalCount: optionalItems.length,
+      count: expenses.length,
+      items: { essential: essentialItems, growth: growthItems, optional: optionalItems }
+    };
   }
 
   // --- ACTIONS WITH OPTIMISTIC UPDATES & SMART ALERTS ---

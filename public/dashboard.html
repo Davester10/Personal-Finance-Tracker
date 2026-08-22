@@ -297,6 +297,23 @@
             <option>Salary</option><option>Gift</option><option>Investment</option><option>Others</option>
           </select>
         </label>
+        <div id="txClassificationContainer" class="hidden">
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            Classification <span class="text-rose-500">*</span>
+          </label>
+          <div class="grid grid-cols-3 gap-2" id="txClassificationGroup">
+            <button type="button" data-val="Essential" onclick="window.selectTxClassification('Essential')" class="tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all">
+              <i class="fa-solid fa-shield-halved text-blue-500"></i> Essential
+            </button>
+            <button type="button" data-val="Growth" onclick="window.selectTxClassification('Growth')" class="tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all">
+              <i class="fa-solid fa-arrow-trend-up text-emerald-500"></i> Growth
+            </button>
+            <button type="button" data-val="Optional" onclick="window.selectTxClassification('Optional')" class="tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all">
+              <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Optional
+            </button>
+          </div>
+          <input type="hidden" id="txClassification" value="" />
+        </div>
         <label class="block text-sm font-medium text-slate-700">Date
           <input type="date" id="txDate" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" />
         </label>

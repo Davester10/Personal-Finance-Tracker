@@ -72,8 +72,224 @@ window.renderReports = function() {
   const sym = AppState.getCurrency();
   renderDonut(filtered, sym);
   renderBarChart(sym);
+  renderValueBasedReport(filtered, sym);
+  renderValueAndActivityAdvisory(filtered, sym);
   renderInsight(filtered, sym);
 };
+
+function renderValueBasedReport(filtered, sym) {
+  const expenses = filtered.filter(t => t.type === 'expense');
+  let essential = 0, growth = 0, optional = 0;
+  let essentialCount = 0, growthCount = 0, optionalCount = 0;
+
+  expenses.forEach(tx => {
+    const amt = Number(tx.amount) || 0;
+    const cls = AppState.getTransactionClassification(tx);
+    if (cls === 'Growth') {
+      growth += amt;
+      growthCount++;
+    } else if (cls === 'Optional') {
+      optional += amt;
+      optionalCount++;
+    } else {
+      essential += amt;
+      essentialCount++;
+    }
+  });
+
+  const total = essential + growth + optional;
+  const essentialPct = total > 0 ? Math.round((essential / total) * 100) : 0;
+  const growthPct = total > 0 ? Math.round((growth / total) * 100) : 0;
+  const optionalPct = total > 0 ? Math.round((optional / total) * 100) : 0;
+
+  const essentialTotalEl = document.getElementById('essentialTotal');
+  const essentialPctEl = document.getElementById('essentialPctBadge');
+  const essentialCountEl = document.getElementById('essentialCount');
+
+  const growthTotalEl = document.getElementById('growthTotal');
+  const growthPctEl = document.getElementById('growthPctBadge');
+  const growthCountEl = document.getElementById('growthCount');
+
+  const optionalTotalEl = document.getElementById('optionalTotal');
+  const optionalPctEl = document.getElementById('optionalPctBadge');
+  const optionalCountEl = document.getElementById('optionalCount');
+
+  const ratioSummaryEl = document.getElementById('valueRatioSummary');
+  const barEssential = document.getElementById('barEssential');
+  const barGrowth = document.getElementById('barGrowth');
+  const barOptional = document.getElementById('barOptional');
+
+  if (essentialTotalEl) essentialTotalEl.textContent = formatCurrency(essential, sym);
+  if (essentialPctEl) essentialPctEl.textContent = `${essentialPct}%`;
+  if (essentialCountEl) essentialCountEl.textContent = `${essentialCount} txn${essentialCount === 1 ? '' : 's'}`;
+
+  if (growthTotalEl) growthTotalEl.textContent = formatCurrency(growth, sym);
+  if (growthPctEl) growthPctEl.textContent = `${growthPct}%`;
+  if (growthCountEl) growthCountEl.textContent = `${growthCount} txn${growthCount === 1 ? '' : 's'}`;
+
+  if (optionalTotalEl) optionalTotalEl.textContent = formatCurrency(optional, sym);
+  if (optionalPctEl) optionalPctEl.textContent = `${optionalPct}%`;
+  if (optionalCountEl) optionalCountEl.textContent = `${optionalCount} txn${optionalCount === 1 ? '' : 's'}`;
+
+  if (ratioSummaryEl) {
+    ratioSummaryEl.textContent = total > 0
+      ? `Essential ${essentialPct}% • Growth ${growthPct}% • Optional ${optionalPct}%`
+      : 'No expenses recorded for this month';
+  }
+
+  if (barEssential) barEssential.style.width = `${essentialPct}%`;
+  if (barGrowth) barGrowth.style.width = `${growthPct}%`;
+  if (barOptional) barOptional.style.width = `${optionalPct}%`;
+}
+
+function renderValueAndActivityAdvisory(filtered, sym) {
+  const container = document.getElementById('valueAdvisoryContainer');
+  if (!container) return;
+
+  const expenses = filtered.filter(t => t.type === 'expense');
+  const income = filtered.filter(t => t.type === 'income');
+
+  if (!expenses.length && !income.length) {
+    container.innerHTML = '<div class="text-slate-400 text-sm py-2">Add some income and expense transactions to see automated value and activity findings.</div>';
+    return;
+  }
+
+  let essential = 0, growth = 0, optional = 0;
+  const optionalByCat = {};
+  let weekendSpend = 0, weekendCount = 0;
+
+  expenses.forEach(tx => {
+    const amt = Number(tx.amount) || 0;
+    const cls = AppState.getTransactionClassification(tx);
+    if (cls === 'Growth') {
+      growth += amt;
+    } else if (cls === 'Optional') {
+      optional += amt;
+      optionalByCat[tx.category] = (optionalByCat[tx.category] || 0) + amt;
+    } else {
+      essential += amt;
+    }
+
+    const d = new Date(tx.date);
+    const day = d.getDay();
+    if (day === 0 || day === 6) {
+      weekendSpend += amt;
+      weekendCount++;
+    }
+  });
+
+  const totalExp = essential + growth + optional;
+  const optionalPct = totalExp > 0 ? Math.round((optional / totalExp) * 100) : 0;
+  const growthPct = totalExp > 0 ? Math.round((growth / totalExp) * 100) : 0;
+  const essentialPct = totalExp > 0 ? Math.round((essential / totalExp) * 100) : 0;
+  const avgSpend = expenses.length > 0 ? Math.round(totalExp / expenses.length) : 0;
+  const weekendPct = totalExp > 0 ? Math.round((weekendSpend / totalExp) * 100) : 0;
+
+  // Find top discretionary drain category
+  const topOptCatEntry = Object.entries(optionalByCat).sort((a, b) => b[1] - a[1])[0];
+
+  let cardsHtml = '';
+
+  // 1. Cutback & Discretionary Spending Advisory
+  if (optionalPct > 30) {
+    const suggestedCutback = Math.round(optional * 0.25);
+    cardsHtml += `
+      <div class="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+          <i class="fa-solid fa-scissors text-base"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+            <h4 class="font-bold text-sm text-amber-900 dark:text-amber-300">Actionable Cutback Opportunity</h4>
+            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200">Optional Spending: ${optionalPct}%</span>
+          </div>
+          <p class="text-xs text-amber-800 dark:text-amber-300/90 leading-relaxed">
+            Optional spending is high at <strong>${optionalPct}%</strong> (${sym}${optional.toLocaleString('en-NG')})${topOptCatEntry ? `, heavily driven by <strong>${topOptCatEntry[0]}</strong> (${sym}${topOptCatEntry[1].toLocaleString('en-NG')})` : ''}.
+            Trimming 25% from optional spends would save you approximately <strong>${sym}${suggestedCutback.toLocaleString('en-NG')}</strong> this month to accelerate your savings goals.
+          </p>
+        </div>
+      </div>`;
+  } else if (optionalPct > 0) {
+    cardsHtml += `
+      <div class="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+          <i class="fa-solid fa-circle-check text-base"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+            <h4 class="font-bold text-sm text-emerald-900 dark:text-emerald-300">Healthy Discretionary Balance</h4>
+            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-200 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200">Optional: ${optionalPct}%</span>
+          </div>
+          <p class="text-xs text-emerald-800 dark:text-emerald-300/90 leading-relaxed">
+            Great discipline! Your optional lifestyle spending is under control at <strong>${optionalPct}%</strong> (${sym}${optional.toLocaleString('en-NG')}), well within the healthy 20–25% limit.
+          </p>
+        </div>
+      </div>`;
+  }
+
+  // 2. Growth & Future Development Advisory
+  if (growthPct >= 20) {
+    cardsHtml += `
+      <div class="p-4 rounded-2xl bg-primary-50/70 dark:bg-primary-950/30 border border-primary-200/80 dark:border-primary-800/50 flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+          <i class="fa-solid fa-arrow-trend-up text-base"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+            <h4 class="font-bold text-sm text-primary-900 dark:text-primary-300">Strong Growth & Investment Velocity</h4>
+            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-primary-200 dark:bg-primary-900/60 text-primary-900 dark:text-primary-200">Growth: ${growthPct}%</span>
+          </div>
+          <p class="text-xs text-primary-800 dark:text-primary-300/90 leading-relaxed">
+            You allocated <strong>${growthPct}%</strong> (${sym}${growth.toLocaleString('en-NG')}) to Growth and Future investments. You are investing in high-ROI assets and skill development.
+          </p>
+        </div>
+      </div>`;
+  } else if (totalExp > 0) {
+    cardsHtml += `
+      <div class="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/50 flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+          <i class="fa-solid fa-seedling text-base"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+            <h4 class="font-bold text-sm text-blue-900 dark:text-blue-300">Growth Allocation Opportunity</h4>
+            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-200 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200">Growth: ${growthPct}%</span>
+          </div>
+          <p class="text-xs text-blue-800 dark:text-blue-300/90 leading-relaxed">
+            ${growthPct === 0
+              ? `You currently have <strong>0%</strong> allocated to Growth. Consider channeling 15–20% of your budget into courses, books, tools, or investment assets to build compounding wealth.`
+              : `Your growth spending is at <strong>${growthPct}%</strong> (${sym}${growth.toLocaleString('en-NG')}). Aim to push this closer to 20–25% for faster personal and financial advancement.`
+            }
+          </p>
+        </div>
+      </div>`;
+  }
+
+  // 3. Activity-Based Behavioral Findings
+  if (expenses.length > 0) {
+    cardsHtml += `
+      <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700 flex items-start gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-slate-700 dark:bg-slate-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+          <i class="fa-solid fa-chart-line text-base"></i>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2 flex-wrap mb-1">
+            <h4 class="font-bold text-sm text-slate-900 dark:text-white">Activity-Based Behavioral Pattern</h4>
+            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">${expenses.length} txns</span>
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            You recorded <strong>${expenses.length} transactions</strong> with an average spend velocity of <strong>${sym}${avgSpend.toLocaleString('en-NG')}</strong> per transaction.
+            ${weekendCount > 0
+              ? ` Weekend activity accounts for <strong>${weekendPct}%</strong> (${sym}${weekendSpend.toLocaleString('en-NG')} across ${weekendCount} txns).`
+              : ` No weekend transactions recorded this month.`
+            }
+          </p>
+        </div>
+      </div>`;
+  }
+
+  container.innerHTML = cardsHtml || '<div class="text-slate-400 text-sm">No insights to display.</div>';
+}
 
 function renderDonut(filtered, sym) {
   const expenses = filtered.filter(t => t.type === 'expense');
@@ -182,7 +398,7 @@ function renderInsight(filtered, sym) {
   if (!el) return;
 
   if (!expenses.length && !income.length) {
-    el.innerHTML = '<div class="text-slate-400 text-sm">Add some income and expense transactions to see spending insights and automated recommendations.</div>';
+    el.innerHTML = '<div class="text-slate-400 text-sm">Add some income and expense transactions to see cash flow summary.</div>';
     return;
   }
 
@@ -196,17 +412,17 @@ function renderInsight(filtered, sym) {
 
   let html = '';
   if (topCatEntry) {
-    html += `<div class="flex items-start gap-3 mb-3"><i class="fa-solid fa-chart-simple text-primary-500 mt-0.5"></i><span>You spent most on <strong>${topCatEntry[0]}</strong> (${sym}${topCatEntry[1].toLocaleString('en-NG')}).</span></div>`;
+    html += `<div class="flex items-start gap-3 mb-3"><i class="fa-solid fa-chart-pie text-primary-500 mt-0.5"></i><span>Highest expense category: <strong>${topCatEntry[0]}</strong> (${sym}${topCatEntry[1].toLocaleString('en-NG')}).</span></div>`;
   }
-  html += `<div class="flex items-start gap-3 mb-3"><i class="fa-solid fa-briefcase text-emerald-500 mt-0.5"></i><span>Total income: <strong>${sym}${totalInc.toLocaleString('en-NG')}</strong> | Total expenses: <strong>${sym}${totalExp.toLocaleString('en-NG')}</strong></span></div>`;
-  html += `<div class="flex items-start gap-3 mb-3"><i class="fa-solid fa-piggy-bank text-primary-500 mt-0.5"></i><span>Remaining monthly balance: <strong>${sym}${balance.toLocaleString('en-NG')}</strong></span></div>`;
+  html += `<div class="flex items-start gap-3 mb-3"><i class="fa-solid fa-briefcase text-emerald-500 mt-0.5"></i><span>Total monthly income: <strong>${sym}${totalInc.toLocaleString('en-NG')}</strong> | Total expenses: <strong>${sym}${totalExp.toLocaleString('en-NG')}</strong></span></div>`;
+  html += `<div class="flex items-start gap-3 mb-3"><i class="fa-solid fa-piggy-bank text-primary-500 mt-0.5"></i><span>Net monthly cash flow: <strong>${sym}${balance.toLocaleString('en-NG')}</strong></span></div>`;
 
   if (totalInc > 0) {
     html += savingsRate >= 20
       ? `<div class="flex items-start gap-3"><i class="fa-solid fa-circle-check text-emerald-500 mt-0.5"></i><span>Great job! You saved <strong>${savingsRate}%</strong> of your income this month.</span></div>`
       : savingsRate >= 0
         ? `<div class="flex items-start gap-3"><i class="fa-solid fa-lightbulb text-amber-500 mt-0.5"></i><span>You saved <strong>${savingsRate}%</strong> of your income. Target saving at least 20% for faster financial growth.</span></div>`
-        : `<div class="flex items-start gap-3"><i class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5"></i><span>You spent more than you earned this month! Review your budget to curb discretionary spending.</span></div>`;
+        : `<div class="flex items-start gap-3"><i class="fa-solid fa-triangle-exclamation text-red-500 mt-0.5"></i><span>You spent more than you earned this month! Review your cutback recommendations above.</span></div>`;
   }
 
   el.innerHTML = html;

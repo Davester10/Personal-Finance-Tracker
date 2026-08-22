@@ -178,8 +178,102 @@
     <div id="reportLegend" class="mt-4 space-y-2"></div>
   </div>
 </div>
+
+<!-- Value-Based Spending Breakdown -->
+<div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-6">
+  <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+    <div>
+      <h3 class="font-bold text-slate-900 flex items-center gap-2">
+        <i class="fa-solid fa-gem text-primary-600"></i> Value-Based Spending Analysis
+      </h3>
+      <p class="text-xs text-slate-500 mt-0.5">Tracking your expenditure across Essential Needs, Growth, and Optional Lifestyle</p>
+    </div>
+    <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-primary-50 text-primary-700 border border-primary-100 flex items-center gap-1.5">
+      <i class="fa-solid fa-scale-balanced"></i> Benchmark: 50 / 25 / 25
+    </span>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5" id="valueCardsGrid">
+    <!-- Essential Card -->
+    <div class="p-4 rounded-2xl border border-blue-100 bg-blue-50/40 dark:bg-slate-800/80 dark:border-slate-700">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-shield-halved"></i> Essential Needs
+        </span>
+        <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-300" id="essentialPctBadge">0%</span>
+      </div>
+      <div class="text-xl font-extrabold text-slate-900 dark:text-white" id="essentialTotal">₦0</div>
+      <div class="text-xs text-slate-500 mt-1 flex items-center justify-between">
+        <span>Target: ~50%</span>
+        <span id="essentialCount" class="font-medium text-slate-600">0 txns</span>
+      </div>
+    </div>
+
+    <!-- Growth Card -->
+    <div class="p-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 dark:bg-slate-800/80 dark:border-slate-700">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-arrow-trend-up"></i> Growth & Future
+        </span>
+        <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300" id="growthPctBadge">0%</span>
+      </div>
+      <div class="text-xl font-extrabold text-slate-900 dark:text-white" id="growthTotal">₦0</div>
+      <div class="text-xs text-slate-500 mt-1 flex items-center justify-between">
+        <span>Target: 20–30%</span>
+        <span id="growthCount" class="font-medium text-slate-600">0 txns</span>
+      </div>
+    </div>
+
+    <!-- Optional Card -->
+    <div class="p-4 rounded-2xl border border-amber-100 bg-amber-50/40 dark:bg-slate-800/80 dark:border-slate-700">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Optional / Lifestyle
+        </span>
+        <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300" id="optionalPctBadge">0%</span>
+      </div>
+      <div class="text-xl font-extrabold text-slate-900 dark:text-white" id="optionalTotal">₦0</div>
+      <div class="text-xs text-slate-500 mt-1 flex items-center justify-between">
+        <span>Target: 20–25%</span>
+        <span id="optionalCount" class="font-medium text-slate-600">0 txns</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Distribution Progress Bar -->
+  <div class="space-y-1.5">
+    <div class="flex justify-between text-xs text-slate-500 font-medium">
+      <span>Actual Expense Allocation</span>
+      <span id="valueRatioSummary">Essential 0% • Growth 0% • Optional 0%</span>
+    </div>
+    <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex shadow-inner">
+      <div id="barEssential" class="bg-blue-500 transition-all duration-500" style="width: 0%" title="Essential"></div>
+      <div id="barGrowth" class="bg-emerald-500 transition-all duration-500" style="width: 0%" title="Growth"></div>
+      <div id="barOptional" class="bg-amber-500 transition-all duration-500" style="width: 0%" title="Optional"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Value Advisory & Activity-Based Behavioral Insights -->
+<div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-6">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="font-bold text-slate-900 flex items-center gap-2">
+      <i class="fa-solid fa-lightbulb text-amber-500"></i> Value Advisory & Activity Findings
+    </h3>
+    <span class="text-xs text-slate-400 font-medium flex items-center gap-1">
+      <i class="fa-solid fa-chart-line"></i> Automated Advice
+    </span>
+  </div>
+  <div id="valueAdvisoryContainer" class="space-y-3">
+    <div class="text-sm text-slate-500">Add transactions to receive automated financial cutback recommendations and activity findings.</div>
+  </div>
+</div>
+
+<!-- General Spending Overview Summary -->
 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
-  <h3 class="font-bold text-slate-900 mb-3">Spending Insight</h3>
+  <h3 class="font-bold text-slate-900 mb-3 flex items-center gap-2">
+    <i class="fa-solid fa-wallet text-slate-600"></i> Cash Flow & Savings Summary
+  </h3>
   <div id="spendingInsight" class="text-sm text-slate-600 leading-relaxed">Add transactions to see insights.</div>
 </div>
 
@@ -220,6 +314,7 @@
             <option value="income">Income</option><option value="expense">Expense</option>
           </select>
         </label>
+        <div id="txFormError" class="hidden items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"></div>
         <label class="block text-sm font-medium text-slate-700">Amount (₦)
           <input type="number" id="txAmount" min="1" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" placeholder="e.g. 5000" />
         </label>
@@ -231,6 +326,23 @@
             <option>Salary</option><option>Gift</option><option>Investment</option><option>Others</option>
           </select>
         </label>
+        <div id="txClassificationContainer" class="hidden">
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            Classification <span class="text-rose-500">*</span>
+          </label>
+          <div class="grid grid-cols-3 gap-2" id="txClassificationGroup">
+            <button type="button" data-val="Essential" onclick="window.selectTxClassification('Essential')" class="tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all">
+              <i class="fa-solid fa-shield-halved text-blue-500"></i> Essential
+            </button>
+            <button type="button" data-val="Growth" onclick="window.selectTxClassification('Growth')" class="tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all">
+              <i class="fa-solid fa-arrow-trend-up text-emerald-500"></i> Growth
+            </button>
+            <button type="button" data-val="Optional" onclick="window.selectTxClassification('Optional')" class="tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 transition-all">
+              <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> Optional
+            </button>
+          </div>
+          <input type="hidden" id="txClassification" value="" />
+        </div>
         <label class="block text-sm font-medium text-slate-700">Date
           <input type="date" id="txDate" class="mt-1 w-full rounded-lg border-slate-200 bg-slate-50 px-3 py-2.5 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-200 transition-all" />
         </label>

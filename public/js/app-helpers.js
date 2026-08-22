@@ -214,17 +214,71 @@ export const INCOME_CATEGORIES = [
   'Others'
 ];
 
+export const DEFAULT_CATEGORY_CLASSIFICATION = {
+  'Food/groceries': 'Essential',
+  'Food': 'Essential',
+  'Bills': 'Essential',
+  'Transport': 'Essential',
+  'Health': 'Essential',
+  'Education': 'Growth',
+  'Investment': 'Growth',
+  'Savings': 'Growth',
+  'Shopping': 'Optional',
+  'Skincare': 'Optional',
+  'Entertainment': 'Optional',
+  'Others': 'Optional'
+};
+
+export function selectTxClassification(val) {
+  const hiddenInput = document.getElementById('txClassification');
+  if (hiddenInput) hiddenInput.value = val || '';
+
+  const buttons = document.querySelectorAll('#txClassificationGroup .tx-class-btn');
+  buttons.forEach(btn => {
+    const btnVal = btn.getAttribute('data-val');
+    if (btnVal === val) {
+      if (val === 'Essential') {
+        btn.className = 'tx-class-btn py-2 px-2.5 rounded-xl border-2 border-blue-500 bg-blue-50/90 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all scale-[1.02]';
+      } else if (val === 'Growth') {
+        btn.className = 'tx-class-btn py-2 px-2.5 rounded-xl border-2 border-emerald-500 bg-emerald-50/90 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all scale-[1.02]';
+      } else if (val === 'Optional') {
+        btn.className = 'tx-class-btn py-2 px-2.5 rounded-xl border-2 border-amber-500 bg-amber-50/90 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm transition-all scale-[1.02]';
+      }
+    } else {
+      btn.className = 'tx-class-btn py-2 px-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-all opacity-80';
+    }
+  });
+}
+window.selectTxClassification = selectTxClassification;
+
 export function updateTxCategoryOptions(type = 'income', selectedCategory = null) {
   const catSelect = document.getElementById('txCategory');
-  if (!catSelect) return;
+  const classContainer = document.getElementById('txClassificationContainer');
   const isIncome = (type === 'income');
   const categories = isIncome ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
-  catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
-  if (selectedCategory && categories.includes(selectedCategory)) {
-    catSelect.value = selectedCategory;
-  } else {
-    catSelect.value = categories[0];
+  if (catSelect) {
+    catSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+    if (selectedCategory && categories.includes(selectedCategory)) {
+      catSelect.value = selectedCategory;
+    } else {
+      catSelect.value = categories[0];
+    }
+  }
+
+  if (classContainer) {
+    if (isIncome) {
+      classContainer.classList.add('hidden');
+      selectTxClassification('');
+    } else {
+      classContainer.classList.remove('hidden');
+      const cat = catSelect?.value || 'Food/groceries';
+      const defaultClass = DEFAULT_CATEGORY_CLASSIFICATION[cat] || 'Essential';
+      const currentClass = document.getElementById('txClassification')?.value;
+      if (!currentClass) {
+        selectTxClassification(defaultClass);
+      }
+    }
   }
 }
 
@@ -236,12 +290,17 @@ function resetTransactionForm(defaultType = 'income') {
   const txType = document.getElementById('txType');
   const txAmount = document.getElementById('txAmount');
   const txDesc = document.getElementById('txDesc');
-  const txCategory = document.getElementById('txCategory');
   const txDate = document.getElementById('txDate');
   const txNote = document.getElementById('txNote');
 
   if (txType) txType.value = defaultType;
   updateTxCategoryOptions(defaultType);
+  if (defaultType === 'expense') {
+    const cat = document.getElementById('txCategory')?.value || 'Food/groceries';
+    selectTxClassification(DEFAULT_CATEGORY_CLASSIFICATION[cat] || 'Essential');
+  } else {
+    selectTxClassification('');
+  }
   if (txAmount) txAmount.value = '';
   if (txDesc) txDesc.value = '';
   if (txDate) txDate.value = todayDateString();
@@ -250,6 +309,27 @@ function resetTransactionForm(defaultType = 'income') {
 }
 
 window.resetTransactionForm = resetTransactionForm;
+
+// Category change listener to auto-suggest classification when category shifts
+document.addEventListener('DOMContentLoaded', () => {
+  const catSelect = document.getElementById('txCategory');
+  const txType = document.getElementById('txType');
+  if (catSelect) {
+    catSelect.addEventListener('change', () => {
+      if (txType?.value === 'expense') {
+        const cat = catSelect.value;
+        const suggested = DEFAULT_CATEGORY_CLASSIFICATION[cat] || 'Essential';
+        selectTxClassification(suggested);
+      }
+    });
+  }
+  if (txType) {
+    txType.addEventListener('change', () => {
+      updateTxCategoryOptions(txType.value);
+    });
+  }
+});
+
 window.resetBudgetForm = function() {
   const category = document.getElementById('budgetCategory');
   const limit = document.getElementById('budgetLimit');
@@ -298,6 +378,7 @@ window.saveTransaction = async function() {
     const amount = parseFloat(document.getElementById('txAmount')?.value);
     const desc = document.getElementById('txDesc')?.value?.trim() || '';
     const category = document.getElementById('txCategory')?.value || (type === 'income' ? 'Salary' : 'Food/groceries');
+    const classification = type === 'expense' ? (document.getElementById('txClassification')?.value || '') : null;
     const date = document.getElementById('txDate')?.value || todayDateString();
     const note = document.getElementById('txNote')?.value?.trim() || '';
 
@@ -321,8 +402,18 @@ window.saveTransaction = async function() {
       });
       return;
     }
+    if (type === 'expense' && !classification) {
+      SmartAlerts.show({
+        title: 'Classification Required',
+        message: 'Please choose whether this expense is <strong>Essential</strong>, <strong>Growth</strong>, or <strong>Optional</strong>.',
+        type: 'warning',
+        icon: 'fa-circle-exclamation',
+        sound: 'warning'
+      });
+      return;
+    }
 
-    await AppState.addTransaction({ type, amount, desc, category, date, note });
+    await AppState.addTransaction({ type, amount, desc, category, classification, date, note });
     closeModal('txModal');
     resetTransactionForm();
   } catch (error) {
